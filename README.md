@@ -1,5 +1,7 @@
 # @1984vc/notion_mdx
 
+[![CI](https://github.com/1984vc/notion_mdx/actions/workflows/ci.yml/badge.svg)](https://github.com/1984vc/notion_mdx/actions/workflows/ci.yml)
+
 A CLI tool to export Notion database pages to MDX files with frontmatter metadata.
 
 ## Features
@@ -109,7 +111,11 @@ This project uses GitHub Actions for continuous integration and deployment:
 
 ### Continuous Integration
 
-Pull requests to the `main` branch automatically trigger:
+The CI workflow runs automatically on:
+- All pull requests to the `main` branch
+- All pushes to the `main` branch
+
+It performs:
 - Installation of dependencies
 - Code linting
 - Test suite execution
