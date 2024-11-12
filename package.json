@@ -1,0 +1,38 @@
+{
+  "name": "notion_mdx",
+  "version": "1.0.0",
+  "description": "CLI tool to export Notion database pages to MDX files with frontmatter",
+  "main": "dist/index.js",
+  "bin": {
+    "notion_mdx": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "cli": "tsx bin/index.ts"
+  },
+  "keywords": [
+    "notion",
+    "mdx",
+    "markdown",
+    "export",
+    "cli",
+    "notion-to-md"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@notionhq/client": "^2.2.13",
+    "commander": "^11.0.0",
+    "notion-to-md": "^3.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.1.6"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
