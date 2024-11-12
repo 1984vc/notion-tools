@@ -21,6 +21,15 @@ interface PageExport {
   outputPath: string;
 }
 
+interface ExportProgress {
+  type: 'start' | 'page' | 'complete';
+  totalPages?: number;
+  currentPage?: number;
+  pageId?: string;
+  outputPath?: string;
+  error?: string;
+}
+
 export class NotionExporter {
   private notion: Client;
   private n2m: NotionToMarkdown;
@@ -83,22 +92,23 @@ export class NotionExporter {
     };
   }
 
-  public async exportDatabase({ database, output }: ExportOptions): Promise<void> {
+  public async exportDatabase({ database, output }: ExportOptions): Promise<ExportProgress[]> {
+    const progress: ExportProgress[] = [];
+    
     // Create output directory if it doesn't exist
     await fs.mkdir(output, { recursive: true });
-
-    console.log(`🔍 Fetching pages from database ${database}...`);
 
     const response = await this.notion.databases.query({
       database_id: database
     });
 
-    console.log(`📝 Found ${response.results.length} pages to export`);
+    progress.push({ 
+      type: 'start',
+      totalPages: response.results.length 
+    });
 
     for (const [index, page] of response.results.entries()) {
       try {
-        console.log(`\n[${index + 1}/${response.results.length}] Converting page: ${page.id}`);
-
         const exportedPage = await this.processPage(page as PageObjectResponse, output);
 
         // Create necessary directories
@@ -116,13 +126,27 @@ lastEditedAt: ${exportedPage.metadata.lastEditedAt}
 ${exportedPage.content}`;
 
         await fs.writeFile(exportedPage.outputPath, content, 'utf8');
-        console.log(`✅ Exported: ${exportedPage.outputPath}`);
+        
+        progress.push({
+          type: 'page',
+          currentPage: index + 1,
+          totalPages: response.results.length,
+          pageId: page.id,
+          outputPath: exportedPage.outputPath
+        });
 
       } catch (error) {
-        console.error(`❌ Error processing page ${page.id}:`, error instanceof Error ? error.message : String(error));
+        progress.push({
+          type: 'page',
+          currentPage: index + 1,
+          totalPages: response.results.length,
+          pageId: page.id,
+          error: error instanceof Error ? error.message : String(error)
+        });
       }
     }
 
-    console.log('\n✨ Export complete!');
+    progress.push({ type: 'complete' });
+    return progress;
   }
 }

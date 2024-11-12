@@ -1,15 +1,19 @@
 {
-  "name": "notion_mdx",
+  "name": "@1984vc/notion_mdx",
   "version": "1.0.0",
   "description": "CLI tool to export Notion database pages to MDX files with frontmatter",
   "main": "dist/index.js",
   "bin": {
     "notion_mdx": "./dist/index.js"
   },
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "cli": "tsx bin/index.ts"
   },
   "keywords": [
@@ -20,19 +24,28 @@
     "cli",
     "notion-to-md"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Mark Percival <mdp@1984.vc>",
+  "license": "MIT",
   "dependencies": {
-    "@notionhq/client": "^2.2.13",
-    "commander": "^11.0.0",
+    "@notionhq/client": "^2.2.15",
+    "commander": "^12.1.0",
     "notion-to-md": "^3.1.1"
   },
   "devDependencies": {
-    "@types/node": "^20.4.5",
+    "@eslint/js": "^9.14.0",
+    "@types/node": "^22.9.0",
+    "@typescript-eslint/eslint-plugin": "^8.14.0",
+    "@typescript-eslint/parser": "^8.14.0",
+    "eslint": "^9.14.0",
+    "globals": "^14.0.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.1.6"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
   },
   "engines": {
     "node": ">=14.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

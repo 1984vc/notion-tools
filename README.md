@@ -1,4 +1,4 @@
-# notion_mdx
+# @1984vc/notion_mdx
 
 A CLI tool to export Notion database pages to MDX files with frontmatter metadata.
 
@@ -21,13 +21,13 @@ A CLI tool to export Notion database pages to MDX files with frontmatter metadat
 You can install this CLI tool globally using npm:
 
 ```bash
-npm install -g notion_mdx
+npm install -g @1984vc/notion_mdx
 ```
 
 Or locally in your project:
 
 ```bash
-npm install notion_mdx
+npm add -D @1984vc/notion_mdx
 ```
 
 ## Setup
@@ -91,6 +91,52 @@ To develop locally:
 4. Link the package locally: `npm link`
 5. Run the CLI: `notion_mdx export -d <database_id> -o <output_path>`
 
+### Testing and Linting
+
+Run tests:
+```bash
+npm test
+```
+
+Run linting:
+```bash
+npm run lint
+```
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+### Continuous Integration
+
+Pull requests to the `main` branch automatically trigger:
+- Installation of dependencies
+- Code linting
+- Test suite execution
+
+### Automated Releases
+
+To publish a new version to npm:
+
+1. Update the version in package.json:
+```bash
+npm version patch  # for bug fixes
+npm version minor  # for new features
+npm version major  # for breaking changes
+```
+
+2. Push the new version tag:
+```bash
+git push origin v*
+```
+
+The release workflow will automatically:
+- Run tests
+- Build the package
+- Publish to npm under the @1984vc organization
+
+Note: Publishing requires an NPM_TOKEN secret to be set in the repository's GitHub secrets.
+
 ## Error Handling
 
 The CLI will:
@@ -101,4 +147,4 @@ The CLI will:
 
 ## License
 
-ISC
+MIT

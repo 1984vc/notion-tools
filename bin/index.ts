@@ -10,7 +10,7 @@ import { NotionExporter } from './notion';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-async function main() {
+async function main(): Promise<void> {
   // Read package.json
   const packageJson = JSON.parse(
     await fs.readFile(path.join(__dirname, '../package.json'), 'utf8')
@@ -45,11 +45,30 @@ async function main() {
 
       try {
         const exporter = new NotionExporter(NOTION_TOKEN);
-        await exporter.exportDatabase({
+        const progress = await exporter.exportDatabase({
           database: options.database,
           output: options.output,
           notionToken: NOTION_TOKEN
         });
+
+        // Handle progress updates
+        for (const update of progress) {
+          switch (update.type) {
+            case 'start':
+              console.log(`🔍 Found ${update.totalPages} pages to export`);
+              break;
+            case 'page':
+              if (update.error) {
+                console.error(`❌ [${update.currentPage}/${update.totalPages}] Error processing page ${update.pageId}: ${update.error}`);
+              } else {
+                console.log(`✅ [${update.currentPage}/${update.totalPages}] Exported: ${update.outputPath}`);
+              }
+              break;
+            case 'complete':
+              console.log('\n✨ Export complete!');
+              break;
+          }
+        }
       } catch (error) {
         console.error('❌ Export failed:', error instanceof Error ? error.message : String(error));
         process.exit(1);
