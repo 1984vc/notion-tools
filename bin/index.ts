@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import fs from 'fs/promises';
-import path from 'path';
+import { readFile } from 'fs/promises';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import { NotionExporter } from './notion';
+import { NotionExporter } from './notion.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,7 +12,7 @@ const __dirname = dirname(__filename);
 async function main(): Promise<void> {
   // Read package.json
   const packageJson = JSON.parse(
-    await fs.readFile(path.join(__dirname, '../package.json'), 'utf8')
+    await readFile(join(__dirname, '../package.json'), 'utf8')
   );
 
   // Check for required environment variable

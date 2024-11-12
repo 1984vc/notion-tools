@@ -1,8 +1,8 @@
 import { Client, isFullPage } from '@notionhq/client';
 import { NotionToMarkdown } from 'notion-to-md';
-import fs from 'fs/promises';
-import path from 'path';
-import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { mkdir, writeFile } from 'fs/promises';
+import { join, dirname } from 'path';
+import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
 
 interface ExportOptions {
   database: string;
@@ -30,6 +30,22 @@ interface ExportProgress {
   error?: string;
 }
 
+interface TitleProperty {
+  type: 'title';
+  title: Array<{
+    plain_text: string;
+  }>;
+}
+
+interface RichTextProperty {
+  type: 'rich_text';
+  rich_text: Array<{
+    plain_text: string;
+  }>;
+}
+
+type NotionProperty = TitleProperty | RichTextProperty;
+
 export class NotionExporter {
   private notion: Client;
   private n2m: NotionToMarkdown;
@@ -40,27 +56,28 @@ export class NotionExporter {
   }
 
   private async getPageTitle(pageInfo: PageObjectResponse): Promise<string> {
-    const titleProp = Object.values(pageInfo.properties).find(
-      (prop): prop is Extract<typeof prop, { type: 'title' }> => 
-        prop.type === 'title'
+    const properties = pageInfo.properties as Record<string, NotionProperty>;
+    const titleProp = Object.values(properties).find(
+      (prop): prop is TitleProperty => prop.type === 'title'
     );
 
     return titleProp?.title?.[0]?.plain_text || 'untitled';
   }
 
   private async getOutputPath(pageInfo: PageObjectResponse, baseOutputDir: string, title: string): Promise<string> {
-    const pathProp = pageInfo.properties['path'] || pageInfo.properties['Path'];
+    const properties = pageInfo.properties as Record<string, NotionProperty>;
+    const pathProp = (properties['path'] || properties['Path']) as RichTextProperty | undefined;
     
-    if (pathProp && pathProp.type === 'rich_text' && pathProp.rich_text[0]?.plain_text) {
+    if (pathProp?.type === 'rich_text' && pathProp.rich_text[0]?.plain_text) {
       const customPath = pathProp.rich_text[0].plain_text;
       const pathParts = customPath.split('/');
       const filename = `${pathParts.pop()}.mdx`;
       const directories = pathParts.join('/');
-      return path.join(baseOutputDir, directories, filename);
+      return join(baseOutputDir, directories, filename);
     }
 
     const filename = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.mdx`;
-    return path.join(baseOutputDir, filename);
+    return join(baseOutputDir, filename);
   }
 
   private async convertPageToMarkdown(pageId: string): Promise<string> {
@@ -96,7 +113,7 @@ export class NotionExporter {
     const progress: ExportProgress[] = [];
     
     // Create output directory if it doesn't exist
-    await fs.mkdir(output, { recursive: true });
+    await mkdir(output, { recursive: true });
 
     const response = await this.notion.databases.query({
       database_id: database
@@ -112,8 +129,8 @@ export class NotionExporter {
         const exportedPage = await this.processPage(page as PageObjectResponse, output);
 
         // Create necessary directories
-        const dirPath = path.dirname(exportedPage.outputPath);
-        await fs.mkdir(dirPath, { recursive: true });
+        const dirPath = dirname(exportedPage.outputPath);
+        await mkdir(dirPath, { recursive: true });
 
         // Add frontmatter and write to file
         const content = `---
@@ -125,7 +142,7 @@ lastEditedAt: ${exportedPage.metadata.lastEditedAt}
 
 ${exportedPage.content}`;
 
-        await fs.writeFile(exportedPage.outputPath, content, 'utf8');
+        await writeFile(exportedPage.outputPath, content, 'utf8');
         
         progress.push({
           type: 'page',
