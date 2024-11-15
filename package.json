@@ -1,6 +1,6 @@
 {
   "name": "@1984vc/notion_mdx",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "CLI tool to export Notion database pages to MDX files with frontmatter",
   "homepage": "https://github.com/1984vc/notion_mdx",
   "main": "dist/index.js",

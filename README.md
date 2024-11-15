@@ -23,13 +23,13 @@ A CLI tool to export Notion database pages to MDX files with frontmatter metadat
 You can install this CLI tool globally using npm:
 
 ```bash
-npm install -g @1984vc/notion_mdx
+npm install -g @1984vc/notion_mdx@2.0.0
 ```
 
 Or locally in your project:
 
 ```bash
-npm add -D @1984vc/notion_mdx
+npm add -D @1984vc/notion_mdx@2.0.0
 ```
 
 ## Setup
@@ -142,6 +142,13 @@ The release workflow will automatically:
 - Publish to npm under the @1984vc organization
 
 Note: Publishing requires an NPM_TOKEN secret to be set in the repository's GitHub secrets.
+
+## Dependencies
+
+Key dependencies:
+- @notionhq/client: ^2.2.15
+- commander: ^12.1.0
+- notion-to-md: ^3.1.1
 
 ## Error Handling
 
