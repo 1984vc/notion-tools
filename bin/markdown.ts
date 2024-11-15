@@ -85,13 +85,11 @@ export class NotionMarkdownExporter {
 
   private async getPagePath(pageId: string): Promise<string | null> {
     try {
-      const formattedId = pageId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
-      
-      if (this.pagePathCache.has(formattedId)) {
-        return this.pagePathCache.get(formattedId) || null;
+      if (this.pagePathCache.has(pageId)) {
+        return this.pagePathCache.get(pageId) || null;
       }
 
-      const pageInfo = await this.notion.pages.retrieve({ page_id: formattedId });
+      const pageInfo = await this.notion.pages.retrieve({ page_id: pageId });
       if (!isFullPage(pageInfo)) {
         return null;
       }
@@ -101,11 +99,11 @@ export class NotionMarkdownExporter {
       
       if (pathProp?.type === 'rich_text' && pathProp.rich_text[0]?.plain_text) {
         const path = pathProp.rich_text[0].plain_text;
-        this.pagePathCache.set(formattedId, path);
+        this.pagePathCache.set(pageId, path);
         return path;
       }
 
-      this.pagePathCache.set(formattedId, '');
+      this.pagePathCache.set(pageId, '');
       return null;
     } catch (error) {
       console.error(`Failed to fetch path for page ${pageId}:`, error);

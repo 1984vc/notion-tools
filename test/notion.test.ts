@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { NotionMarkdownExporter } from '../bin/markdown';
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { join } from 'path';
+import { tmpdir } from 'os';
 
 describe('NotionMarkdownExporter', () => {
   let exporter: NotionMarkdownExporter;
@@ -167,6 +169,52 @@ And [Pre vs Post Money](/guides/pre-money-vs-post-money)`);
       expect(result.metadata.sort_order).toBe(5);
       expect(result.metadata.notionId).toBe('test-id');
       expect(result.title).toBe('Test Page');
+    });
+  });
+
+  describe('exportDatabase', () => {
+    it('should export database with JSON when includeJson is true', async () => {
+      const mockPage = createMockPage({
+        Name: {
+          type: 'title',
+          title: [{ plain_text: 'Test Page' }]
+        }
+      });
+
+      // Mock database query
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.databases.query = async () => ({
+        results: [mockPage]
+      });
+
+      // Mock page retrieval
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async () => mockPage;
+
+      // Mock blocks retrieval
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.blocks.children.list = async () => ({
+        results: [{ type: 'paragraph', paragraph: { text: [{ plain_text: 'Test content' }] } }]
+      });
+
+      // Mock markdown conversion
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.pageToMarkdown = async () => [];
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.toMarkdownString = () => ({ parent: '# Test Content' });
+
+      const testOutputDir = join(tmpdir(), 'notion-mdx-test-' + Date.now());
+      const progress = await exporter.exportDatabase({
+        database: 'test-db',
+        output: testOutputDir,
+        notionToken: 'fake-token',
+        includeJson: true
+      });
+
+      expect(progress).toHaveLength(3); // start, page, complete
+      expect(progress[0].type).toBe('start');
+      expect(progress[1].type).toBe('page');
+      expect(progress[2].type).toBe('complete');
     });
   });
 });

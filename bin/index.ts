@@ -30,13 +30,15 @@ async function main(): Promise<void> {
   interface ExportOptions {
     id: string;
     output: string;
+    includeJson?: boolean;
   }
 
   program
-    .command('export-markdown')
+    .command('export-mdx')
     .description('Export pages from a Notion database to MDX files')
     .requiredOption('--id <id>', 'Notion database ID')
     .requiredOption('-o, --output <path>', 'Output directory path')
+    .option('--include-json', 'Include raw JSON export in output directory')
     .action(async (options: ExportOptions) => {
       if (!NOTION_TOKEN) {
         console.error('Error: NOTION_TOKEN environment variable is required');
@@ -49,7 +51,8 @@ async function main(): Promise<void> {
         const progress = await exporter.exportDatabase({
           database: options.id,
           output: options.output,
-          notionToken: NOTION_TOKEN
+          notionToken: NOTION_TOKEN,
+          includeJson: options.includeJson
         });
 
         // Handle progress updates
@@ -66,6 +69,9 @@ async function main(): Promise<void> {
               }
               break;
             case 'complete':
+              if (options.includeJson) {
+                console.log('📄 Generated index.json with raw database content');
+              }
               console.log('\n✨ Export complete!');
               break;
           }
