@@ -3,11 +3,15 @@ import { NotionToMarkdown } from 'notion-to-md';
 import { mkdir, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
+import { MetaGenerator } from './meta.js';
 
 interface ExportOptions {
   database: string;
   output: string;
   notionToken: string;
+  includeJson?: boolean;
+  basePath?: string;
+  noFrontmatter?: boolean;
 }
 
 interface PageExport {
@@ -23,11 +27,12 @@ interface PageExport {
 }
 
 interface ExportProgress {
-  type: 'start' | 'page' | 'complete';
+  type: 'start' | 'page' | 'meta' | 'json' | 'complete';
   totalPages?: number;
   currentPage?: number;
   pageId?: string;
   outputPath?: string;
+  directory?: string;
   error?: string;
 }
 
@@ -52,15 +57,24 @@ interface NumberProperty {
 
 type NotionProperty = TitleProperty | RichTextProperty | NumberProperty;
 
-export class NotionExporter {
+export class NotionMarkdownExporter {
   private notion: Client;
   private n2m: NotionToMarkdown;
   private pagePathCache: Map<string, string>;
+  private metaGenerator: MetaGenerator;
+  private basePath: string;
 
-  constructor(notionToken: string) {
+  constructor(notionToken: string, basePath?: string) {
     this.notion = new Client({ auth: notionToken });
     this.n2m = new NotionToMarkdown({ notionClient: this.notion });
     this.pagePathCache = new Map();
+    this.metaGenerator = new MetaGenerator();
+    this.basePath = basePath || '';
+  }
+
+  private normalizeQuotes(content: string): string {
+    // Replace curly double quotes (U+201C and U+201D) with straight double quotes
+    return content.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, '\'');
   }
 
   private async getPageTitle(pageInfo: PageObjectResponse): Promise<string> {
@@ -90,10 +104,10 @@ export class NotionExporter {
 
   private async getPagePath(pageId: string): Promise<string | null> {
     try {
-      // Format the ID with hyphens if it doesn't have them
-      const formattedId = pageId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+      // Remove any existing hyphens and format the ID
+      const cleanId = pageId.replace(/-/g, '');
+      const formattedId = cleanId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
       
-      // Check cache first
       if (this.pagePathCache.has(formattedId)) {
         return this.pagePathCache.get(formattedId) || null;
       }
@@ -112,7 +126,6 @@ export class NotionExporter {
         return path;
       }
 
-      // If no path property, cache null to avoid repeated lookups
       this.pagePathCache.set(formattedId, '');
       return null;
     } catch (error) {
@@ -122,8 +135,7 @@ export class NotionExporter {
   }
 
   private async transformDatabaseLinks(markdown: string): Promise<string> {
-    // Match Markdown links with Notion page IDs
-    const linkRegex = /\[([^\]]+)\]\(\/([a-f0-9]{32})\)/g;
+    const linkRegex = /\[([^\]]+)\]\(\/([a-f0-9-]{32,36})\)/g;
     let transformedMarkdown = markdown;
 
     for (const match of transformedMarkdown.matchAll(linkRegex)) {
@@ -131,7 +143,8 @@ export class NotionExporter {
       const pagePath = await this.getPagePath(pageId);
 
       if (pagePath) {
-        const newLink = `[${linkText}](/${pagePath})`;
+        const prefix = this.basePath ? `/${this.basePath}` : '';
+        const newLink = `[${linkText}](${prefix}/${pagePath})`;
         transformedMarkdown = transformedMarkdown.replace(fullMatch, newLink);
       }
     }
@@ -142,7 +155,8 @@ export class NotionExporter {
   private async convertPageToMarkdown(pageId: string): Promise<string> {
     const mdblocks = await this.n2m.pageToMarkdown(pageId);
     const { parent: markdown } = this.n2m.toMarkdownString(mdblocks);
-    return this.transformDatabaseLinks(markdown);
+    const transformedMarkdown = await this.transformDatabaseLinks(markdown);
+    return this.normalizeQuotes(transformedMarkdown);
   }
 
   private async processPage(page: PageObjectResponse, baseOutputDir: string): Promise<PageExport> {
@@ -173,31 +187,49 @@ export class NotionExporter {
     };
   }
 
-  public async exportDatabase({ database, output }: ExportOptions): Promise<ExportProgress[]> {
-    const progress: ExportProgress[] = [];
+  private async exportDatabaseJson(database: string, output: string): Promise<void> {
+    const response = await this.notion.databases.query({
+      database_id: database
+    });
+
+    const pages = [];
+    for (const page of response.results) {
+      const pageInfo = await this.notion.pages.retrieve({ page_id: page.id });
+      const blocks = await this.notion.blocks.children.list({ block_id: page.id });
+      pages.push({
+        page: pageInfo,
+        blocks: blocks.results
+      });
+    }
+
+    const jsonPath = join(output, 'index.json');
+    await writeFile(jsonPath, JSON.stringify({ pages }, null, 2), 'utf8');
+  }
+
+  public async *exportDatabase({ database, output, includeJson, basePath, noFrontmatter = false }: ExportOptions): AsyncGenerator<ExportProgress> {
+    this.basePath = basePath || '';
     
-    // Create output directory if it doesn't exist
     await mkdir(output, { recursive: true });
 
     const response = await this.notion.databases.query({
       database_id: database
     });
 
-    progress.push({ 
+    yield { 
       type: 'start',
       totalPages: response.results.length 
-    });
+    };
 
     for (const [index, page] of response.results.entries()) {
       try {
         const exportedPage = await this.processPage(page as PageObjectResponse, output);
 
-        // Create necessary directories
         const dirPath = dirname(exportedPage.outputPath);
         await mkdir(dirPath, { recursive: true });
 
-        // Add frontmatter and write to file
-        const content = `---
+        let content = exportedPage.content;
+        if (!noFrontmatter) {
+          content = `---
 title: ${exportedPage.title}
 notionId: ${exportedPage.metadata.notionId}
 createdAt: ${exportedPage.metadata.createdAt}
@@ -205,30 +237,50 @@ lastEditedAt: ${exportedPage.metadata.lastEditedAt}
 weight: ${exportedPage.metadata.weight}
 ---
 
-${exportedPage.content}`;
+${content}`;
+        }
 
         await writeFile(exportedPage.outputPath, content, 'utf8');
         
-        progress.push({
+        // Add page to meta generator with weight
+        this.metaGenerator.addPage(exportedPage.outputPath, exportedPage.title, exportedPage.metadata.weight);
+
+        yield {
           type: 'page',
           currentPage: index + 1,
           totalPages: response.results.length,
           pageId: page.id,
           outputPath: exportedPage.outputPath
-        });
+        };
 
       } catch (error) {
-        progress.push({
+        yield {
           type: 'page',
           currentPage: index + 1,
           totalPages: response.results.length,
           pageId: page.id,
           error: error instanceof Error ? error.message : String(error)
-        });
+        };
       }
     }
 
-    progress.push({ type: 'complete' });
-    return progress;
+    // Generate _meta.ts files
+    const directories = this.metaGenerator.getDirectories();
+    for (const dir of directories) {
+      await this.metaGenerator.generateMetaFile(dir);
+      yield {
+        type: 'meta',
+        directory: dir
+      };
+    }
+
+    if (includeJson) {
+      await this.exportDatabaseJson(database, output);
+      yield {
+        type: 'json'
+      };
+    }
+
+    yield { type: 'complete' };
   }
 }

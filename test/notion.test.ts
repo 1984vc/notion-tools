@@ -1,52 +1,405 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { NotionExporter } from '../bin/notion';
-import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { NotionMarkdownExporter } from '../bin/markdown';
+import type { PageObjectResponse, BlockObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import { readFile } from 'fs/promises';
 
-describe('NotionExporter', () => {
-  let exporter: NotionExporter;
+describe('NotionMarkdownExporter', () => {
+  let exporter: NotionMarkdownExporter;
+
+  const createMockPage = (properties: Record<string, unknown>): PageObjectResponse => ({
+    object: 'page',
+    id: 'test-id',
+    created_time: '2023-01-01T00:00:00.000Z',
+    last_edited_time: '2023-01-02T00:00:00.000Z',
+    created_by: {
+      object: 'user',
+      id: 'user-id'
+    },
+    last_edited_by: {
+      object: 'user',
+      id: 'user-id'
+    },
+    cover: null,
+    icon: null,
+    parent: {
+      type: 'database_id',
+      database_id: 'database-id'
+    },
+    archived: false,
+    properties,
+    url: 'https://notion.so/test-page'
+  } as PageObjectResponse);
 
   beforeEach(() => {
-    exporter = new NotionExporter('fake-token');
+    exporter = new NotionMarkdownExporter('fake-token');
   });
 
   describe('getPageTitle', () => {
-    it('should extract title from page properties', async () => {
-      const mockPage = {
-        properties: {
-          Name: {
-            type: 'title',
-            title: [
-              {
-                type: 'text',
-                text: { content: 'Test Page' },
-                plain_text: 'Test Page',
-                annotations: {
-                  bold: false,
-                  italic: false,
-                  strikethrough: false,
-                  underline: false,
-                  code: false,
-                  color: 'default'
-                }
+    it('should extract title from page properties', async (): Promise<void> => {
+      const mockPage = createMockPage({
+        Name: {
+          type: 'title',
+          title: [
+            {
+              type: 'text',
+              text: { content: 'Test Page' },
+              plain_text: 'Test Page',
+              annotations: {
+                bold: false,
+                italic: false,
+                strikethrough: false,
+                underline: false,
+                code: false,
+                color: 'default'
               }
-            ]
-          }
+            }
+          ]
         }
-      } as unknown as PageObjectResponse;
+      });
 
       // @ts-expect-error accessing private method for testing
       const title = await exporter.getPageTitle(mockPage);
       expect(title).toBe('Test Page');
     });
 
-    it('should return "untitled" when no title is found', async () => {
-      const mockPage = {
-        properties: {}
-      } as unknown as PageObjectResponse;
+    it('should return "untitled" when no title is found', async (): Promise<void> => {
+      const mockPage = createMockPage({});
 
       // @ts-expect-error accessing private method for testing
       const title = await exporter.getPageTitle(mockPage);
       expect(title).toBe('untitled');
+    });
+  });
+
+  describe('transformDatabaseLinks', () => {
+    it('should transform database links to use page paths', async (): Promise<void> => {
+      // Mock the Notion API call
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => createMockPage({
+        path: {
+          type: 'rich_text',
+          rich_text: [{ plain_text: 'guides/safe-vs-priced-rounds' }]
+        }
+      });
+
+      const markdown = 'Check out [Safe vs Priced Rounds](/3c5a0edb257449558cf968f5ded58812)';
+      
+      // @ts-expect-error accessing private method for testing
+      const transformed = await exporter.transformDatabaseLinks(markdown);
+      
+      expect(transformed).toBe('Check out [Safe vs Priced Rounds](/guides/safe-vs-priced-rounds)');
+    });
+
+    it('should handle multiple database links', async (): Promise<void> => {
+      const paths = {
+        '3c5a0edb257449558cf968f5ded58812': 'guides/safe-vs-priced-rounds',
+        '23f1324e5ecc4d32af0e81e60a03cf18': 'guides/pre-money-vs-post-money'
+      };
+
+      // Mock the Notion API call with different responses based on page ID
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async ({ page_id }: { page_id: string }): Promise<PageObjectResponse> => {
+        // Remove any hyphens from the page_id to match the format in paths
+        const normalizedId = page_id.replace(/-/g, '');
+        return createMockPage({
+          path: {
+            type: 'rich_text',
+            rich_text: [{ plain_text: paths[normalizedId] }]
+          }
+        });
+      };
+
+      const markdown = `Check out [Safe vs Priced Rounds](/3c5a0edb-2574-4955-8cf9-68f5ded58812)
+And [Pre vs Post Money](/23f1324e-5ecc-4d32-af0e-81e60a03cf18)`;
+      
+      // @ts-expect-error accessing private method for testing
+      const transformed = await exporter.transformDatabaseLinks(markdown);
+      
+      expect(transformed).toBe(`Check out [Safe vs Priced Rounds](/guides/safe-vs-priced-rounds)
+And [Pre vs Post Money](/guides/pre-money-vs-post-money)`);
+    });
+
+    it('should preserve links that do not have matching pages', async (): Promise<void> => {
+      // Mock the Notion API call to return a page without a path property
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => createMockPage({});
+
+      const markdown = 'Check out [Missing Page](/3c5a0edb257449558cf968f5ded58812)';
+      
+      // @ts-expect-error accessing private method for testing
+      const transformed = await exporter.transformDatabaseLinks(markdown);
+      
+      expect(transformed).toBe(markdown);
+    });
+
+    it('should add basePath to internal links when provided', async (): Promise<void> => {
+      exporter = new NotionMarkdownExporter('fake-token', 'docs');
+
+      // Mock the Notion API call
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => createMockPage({
+        path: {
+          type: 'rich_text',
+          rich_text: [{ plain_text: 'guides/safe-vs-priced-rounds' }]
+        }
+      });
+
+      const markdown = 'Check out [Safe vs Priced Rounds](/3c5a0edb257449558cf968f5ded58812)';
+      
+      // @ts-expect-error accessing private method for testing
+      const transformed = await exporter.transformDatabaseLinks(markdown);
+      
+      expect(transformed).toBe('Check out [Safe vs Priced Rounds](/docs/guides/safe-vs-priced-rounds)');
+    });
+  });
+
+  describe('normalizeQuotes', () => {
+    it('should replace curly quotes with straight quotes in React components', async (): Promise<void> => {
+      // This needs to stay as a unicode encoding (\u2018) to avoid being converted to plain quotes by the LLM coder
+      const markdown = `
+import { Callout } from \u2018nextra/components\u2019;
+
+<Callout emoji=\u201C📢\u201D>
+  This is a "quoted" text with some "React components"
+</Callout>
+      `;
+
+      // @ts-expect-error accessing private method for testing
+      const normalized = exporter.normalizeQuotes(markdown);
+
+      expect(normalized).toBe(`
+import { Callout } from 'nextra/components';
+
+<Callout emoji="📢">
+  This is a "quoted" text with some "React components"
+</Callout>
+      `);
+    });
+  });
+
+  describe('processPage', () => {
+    it('should include weight from page properties in metadata', async (): Promise<void> => {
+      const mockPage = createMockPage({
+        Name: {
+          type: 'title',
+          title: [
+            {
+              type: 'text',
+              text: { content: 'Test Page' },
+              plain_text: 'Test Page',
+              annotations: {
+                bold: false,
+                italic: false,
+                strikethrough: false,
+                underline: false,
+                code: false,
+                color: 'default'
+              }
+            }
+          ],
+        },
+        weight: {
+          type: 'number',
+          number: 5
+        }
+      });
+
+      // Mock the necessary methods
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => mockPage;
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.pageToMarkdown = async (): Promise<BlockObjectResponse[]> => [];
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
+
+      // @ts-expect-error accessing private method for testing
+      const result = await exporter.processPage(mockPage, '/output');
+
+      expect(result.metadata.weight).toBe(5);
+      expect(result.metadata.notionId).toBe('test-id');
+      expect(result.title).toBe('Test Page');
+    });
+
+    it('should default weight to 0 when weight property is not found', async (): Promise<void> => {
+      const mockPage = createMockPage({
+        Name: {
+          type: 'title',
+          title: [{ plain_text: 'Test Page' }]
+        }
+      });
+
+      // Mock the necessary methods
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => mockPage;
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.pageToMarkdown = async (): Promise<BlockObjectResponse[]> => [];
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
+
+      // @ts-expect-error accessing private method for testing
+      const result = await exporter.processPage(mockPage, '/output');
+
+      expect(result.metadata.weight).toBe(0);
+    });
+  });
+
+  describe('exportDatabase', () => {
+    it('should export database with JSON when includeJson is true', async (): Promise<void> => {
+      const mockPage = createMockPage({
+        Name: {
+          type: 'title',
+          title: [{ plain_text: 'Test Page' }]
+        }
+      });
+
+      // Mock database query
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.databases.query = async (): Promise<{ results: PageObjectResponse[] }> => ({
+        results: [mockPage]
+      });
+
+      // Mock page retrieval
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => mockPage;
+
+      // Mock blocks retrieval
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.blocks.children.list = async (): Promise<{ results: BlockObjectResponse[] }> => ({
+        results: [{
+          object: 'block',
+          id: 'block-id',
+          parent: { type: 'page_id', page_id: 'page-id' },
+          created_time: '2024-01-01T00:00:00.000Z',
+          last_edited_time: '2024-01-01T00:00:00.000Z',
+          created_by: { object: 'user', id: 'user-id' },
+          last_edited_by: { object: 'user', id: 'user-id' },
+          has_children: false,
+          archived: false,
+          in_trash: false,
+          type: 'paragraph',
+          paragraph: {
+            rich_text: [{
+              type: 'text',
+              text: { content: 'Test content', link: null },
+              annotations: {
+                bold: false,
+                italic: false,
+                strikethrough: false,
+                underline: false,
+                code: false,
+                color: 'default'
+              },
+              plain_text: 'Test content',
+              href: null
+            }],
+            color: 'default'
+          }
+        } as BlockObjectResponse]
+      });
+
+      // Mock markdown conversion
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.pageToMarkdown = async (): Promise<BlockObjectResponse[]> => [];
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
+
+      const testOutputDir = join(tmpdir(), 'notion-mdx-test-' + Date.now());
+      
+      let progressCount = 0;
+      for await (const progress of exporter.exportDatabase({
+        database: 'test-db',
+        output: testOutputDir,
+        notionToken: 'fake-token',
+        includeJson: true
+      })) {
+        progressCount++;
+        expect(progress.type).toBeDefined();
+      }
+
+      expect(progressCount).toBeGreaterThan(0);
+    });
+
+    it('should include frontmatter by default', async (): Promise<void> => {
+      const mockPage = createMockPage({
+        Name: {
+          type: 'title',
+          title: [{ plain_text: 'Test Page' }]
+        }
+      });
+
+      // Mock database query
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.databases.query = async (): Promise<{ results: PageObjectResponse[] }> => ({
+        results: [mockPage]
+      });
+
+      // Mock page retrieval
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => mockPage;
+
+      // Mock markdown conversion
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.pageToMarkdown = async (): Promise<BlockObjectResponse[]> => [];
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
+
+      const testOutputDir = join(tmpdir(), 'notion-mdx-test-' + Date.now());
+      
+      for await (const progress of exporter.exportDatabase({
+        database: 'test-db',
+        output: testOutputDir,
+        notionToken: 'fake-token'
+      })) {
+        if (progress.type === 'page' && progress.outputPath) {
+          const content = await readFile(progress.outputPath, 'utf8');
+          expect(content).toContain('---');
+          expect(content).toContain('title: Test Page');
+          expect(content).toContain('notionId: test-id');
+          expect(content).toContain('# Test Content');
+        }
+      }
+    });
+
+    it('should exclude frontmatter when noFrontmatter option is true', async (): Promise<void> => {
+      const mockPage = createMockPage({
+        Name: {
+          type: 'title',
+          title: [{ plain_text: 'Test Page' }]
+        }
+      });
+
+      // Mock database query
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.databases.query = async (): Promise<{ results: PageObjectResponse[] }> => ({
+        results: [mockPage]
+      });
+
+      // Mock page retrieval
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => mockPage;
+
+      // Mock markdown conversion
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.pageToMarkdown = async (): Promise<BlockObjectResponse[]> => [];
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
+
+      const testOutputDir = join(tmpdir(), 'notion-mdx-test-' + Date.now());
+      
+      for await (const progress of exporter.exportDatabase({
+        database: 'test-db',
+        output: testOutputDir,
+        notionToken: 'fake-token',
+        noFrontmatter: true
+      })) {
+        if (progress.type === 'page' && progress.outputPath) {
+          const content = await readFile(progress.outputPath, 'utf8');
+          expect(content).not.toContain('---');
+          expect(content).toBe('# Test Content');
+        }
+      }
     });
   });
 });
