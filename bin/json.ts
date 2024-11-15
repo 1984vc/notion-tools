@@ -1,7 +1,7 @@
 import { Client, isFullPage } from '@notionhq/client';
 import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
+import { PageObjectResponse, BlockObjectResponse, PartialBlockObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
 
 interface ExportOptions {
   database: string;
@@ -34,6 +34,16 @@ interface RichTextProperty {
 
 type NotionProperty = TitleProperty | RichTextProperty;
 
+interface ProcessedPage {
+  id: string;
+  title: string;
+  created_time: string;
+  last_edited_time: string;
+  weight: number;
+  properties: Record<string, unknown>;
+  blocks: (BlockObjectResponse | PartialBlockObjectResponse)[];
+}
+
 export class NotionJsonExporter {
   private notion: Client;
 
@@ -50,7 +60,7 @@ export class NotionJsonExporter {
     return titleProp?.title?.[0]?.plain_text || 'untitled';
   }
 
-  private async processPage(page: PageObjectResponse, index: number): Promise<Record<string, any>> {
+  private async processPage(page: PageObjectResponse, index: number): Promise<ProcessedPage> {
     const pageInfo = await this.notion.pages.retrieve({ page_id: page.id });
     
     if (!isFullPage(pageInfo)) {
@@ -85,7 +95,7 @@ export class NotionJsonExporter {
       totalPages: response.results.length 
     });
 
-    const pages = [];
+    const pages: ProcessedPage[] = [];
 
     for (const [index, page] of response.results.entries()) {
       try {

@@ -4,7 +4,7 @@ import { join, basename, dirname } from 'path';
 interface PageMeta {
   path: string;
   title: string;
-   weight: number;
+  weight: number;
 }
 
 export class MetaGenerator {
@@ -14,12 +14,12 @@ export class MetaGenerator {
     this.directoryPages = new Map();
   }
 
-  addPage(pagePath: string, title: string,  weight: number) {
+  addPage(pagePath: string, title: string, weight: number): void {
     const dir = dirname(pagePath);
     const pageInfo: PageMeta = {
       path: pagePath,
       title,
-       weight
+      weight
     };
 
     if (!this.directoryPages.has(dir)) {
@@ -33,8 +33,8 @@ export class MetaGenerator {
   }
 
   private generateMetaContent(pages: PageMeta[]): string {
-    // Sort pages by  weight
-    const sortedPages = [...pages].sort((a, b) => a. weight - b. weight);
+    // Sort pages by weight
+    const sortedPages = [...pages].sort((a, b) => a.weight - b.weight);
     
     const entries = sortedPages.map(page => {
       // Get filename without extension

@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { NotionRawExporter } from '../bin/raw-json';
+import type { QueryDatabaseResponse, PageObjectResponse, ListBlockChildrenResponse } from '@notionhq/client/build/src/api-endpoints';
+
+interface NotionError extends Error {
+  code?: string;
+  status?: number;
+}
 
 describe('NotionRawExporter', () => {
   let exporter: NotionRawExporter;
@@ -9,20 +15,54 @@ describe('NotionRawExporter', () => {
   });
 
   describe('exportRaw', () => {
-    it('should fetch and format database data', async () => {
+    it('should fetch and format database data', async (): Promise<void> => {
       const mockDatabaseResponse = {
+        type: 'page_or_database',
+        page_or_database: {},
+        object: 'list',
         results: [
           {
+            object: 'page',
             id: 'page-id',
+            created_time: '2024-01-01T00:00:00.000Z',
+            last_edited_time: '2024-01-01T00:00:00.000Z',
+            created_by: { object: 'user', id: 'user-id' },
+            last_edited_by: { object: 'user', id: 'user-id' },
+            cover: null,
+            icon: null,
+            parent: { type: 'database_id', database_id: 'test-db' },
+            archived: false,
             properties: {
-              title: { type: 'title', title: [{ plain_text: 'Test Page' }] }
-            }
-          }
-        ]
-      };
+              'Page Title': {
+                id: 'title-id',
+                type: 'title',
+                title: [{
+                  type: 'text',
+                  text: { content: 'Test Page', link: null },
+                  annotations: {
+                    bold: false,
+                    italic: false,
+                    strikethrough: false,
+                    underline: false,
+                    code: false,
+                    color: 'default'
+                  },
+                  plain_text: 'Test Page',
+                  href: null
+                }]
+              }
+            },
+            url: 'https://notion.so/test-page',
+            public_url: null,
+            in_trash: false
+          } as PageObjectResponse
+        ],
+        next_cursor: null,
+        has_more: false
+      } as unknown as QueryDatabaseResponse;
 
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.databases.query = async () => mockDatabaseResponse;
+      exporter.notion.databases.query = async (): Promise<QueryDatabaseResponse> => mockDatabaseResponse;
 
       const result = await exporter.exportRaw({ id: 'test-db-id', notionToken: 'fake-token' });
       const parsed = JSON.parse(result);
@@ -30,34 +70,91 @@ describe('NotionRawExporter', () => {
       expect(parsed).toEqual(mockDatabaseResponse);
     });
 
-    it('should fetch and format page data when database fetch fails', async () => {
+    it('should fetch and format page data when database fetch fails', async (): Promise<void> => {
       const mockPageResponse = {
+        object: 'page',
         id: 'page-id',
+        created_time: '2024-01-01T00:00:00.000Z',
+        last_edited_time: '2024-01-01T00:00:00.000Z',
+        created_by: { object: 'user', id: 'user-id' },
+        last_edited_by: { object: 'user', id: 'user-id' },
+        cover: null,
+        icon: null,
+        parent: { type: 'database_id', database_id: 'test-db' },
+        archived: false,
         properties: {
-          title: { type: 'title', title: [{ plain_text: 'Test Page' }] }
-        }
-      };
+          'Page Title': {
+            id: 'title-id',
+            type: 'title',
+            title: [{
+              type: 'text',
+              text: { content: 'Test Page', link: null },
+              annotations: {
+                bold: false,
+                italic: false,
+                strikethrough: false,
+                underline: false,
+                code: false,
+                color: 'default'
+              },
+              plain_text: 'Test Page',
+              href: null
+            }]
+          }
+        },
+        url: 'https://notion.so/test-page',
+        public_url: null,
+        in_trash: false
+      } as unknown as PageObjectResponse;
 
       const mockBlocksResponse = {
+        object: 'list',
         results: [
           {
+            object: 'block',
+            id: 'block-id',
+            parent: { type: 'page_id', page_id: 'page-id' },
+            created_time: '2024-01-01T00:00:00.000Z',
+            last_edited_time: '2024-01-01T00:00:00.000Z',
+            created_by: { object: 'user', id: 'user-id' },
+            last_edited_by: { object: 'user', id: 'user-id' },
+            has_children: false,
+            archived: false,
             type: 'paragraph',
-            paragraph: { text: [{ plain_text: 'Test content' }] }
+            paragraph: {
+              rich_text: [{
+                type: 'text',
+                text: { content: 'Test content', link: null },
+                annotations: {
+                  bold: false,
+                  italic: false,
+                  strikethrough: false,
+                  underline: false,
+                  code: false,
+                  color: 'default'
+                },
+                plain_text: 'Test content',
+                href: null
+              }],
+              color: 'default'
+            }
           }
-        ]
-      };
+        ],
+        next_cursor: null,
+        has_more: false
+      } as ListBlockChildrenResponse;
 
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.databases.query = async () => {
-        const error: any = new Error('Not found');
+      exporter.notion.databases.query = async (): Promise<never> => {
+        const error: NotionError = new Error('Not found');
         error.code = 'object_not_found';
         throw error;
       };
 
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async () => mockPageResponse;
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => mockPageResponse;
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.blocks.children.list = async () => mockBlocksResponse;
+      exporter.notion.blocks.children.list = async (): Promise<ListBlockChildrenResponse> => mockBlocksResponse;
 
       const result = await exporter.exportRaw({ id: 'test-page-id', notionToken: 'fake-token' });
       const parsed = JSON.parse(result);
@@ -68,14 +165,14 @@ describe('NotionRawExporter', () => {
       });
     });
 
-    it('should throw error when neither database nor page is found', async () => {
+    it('should throw error when neither database nor page is found', async (): Promise<void> => {
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.databases.query = async () => {
+      exporter.notion.databases.query = async (): Promise<never> => {
         throw new Error('Database not found');
       };
 
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async () => {
+      exporter.notion.pages.retrieve = async (): Promise<never> => {
         throw new Error('Page not found');
       };
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { NotionMarkdownExporter } from '../bin/markdown';
-import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import type { PageObjectResponse, BlockObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { readFile } from 'fs/promises';
@@ -8,7 +8,7 @@ import { readFile } from 'fs/promises';
 describe('NotionMarkdownExporter', () => {
   let exporter: NotionMarkdownExporter;
 
-  const createMockPage = (properties: any): PageObjectResponse => ({
+  const createMockPage = (properties: Record<string, unknown>): PageObjectResponse => ({
     object: 'page',
     id: 'test-id',
     created_time: '2023-01-01T00:00:00.000Z',
@@ -37,7 +37,7 @@ describe('NotionMarkdownExporter', () => {
   });
 
   describe('getPageTitle', () => {
-    it('should extract title from page properties', async () => {
+    it('should extract title from page properties', async (): Promise<void> => {
       const mockPage = createMockPage({
         Name: {
           type: 'title',
@@ -64,7 +64,7 @@ describe('NotionMarkdownExporter', () => {
       expect(title).toBe('Test Page');
     });
 
-    it('should return "untitled" when no title is found', async () => {
+    it('should return "untitled" when no title is found', async (): Promise<void> => {
       const mockPage = createMockPage({});
 
       // @ts-expect-error accessing private method for testing
@@ -74,10 +74,10 @@ describe('NotionMarkdownExporter', () => {
   });
 
   describe('transformDatabaseLinks', () => {
-    it('should transform database links to use page paths', async () => {
+    it('should transform database links to use page paths', async (): Promise<void> => {
       // Mock the Notion API call
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async ({ page_id }) => createMockPage({
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => createMockPage({
         path: {
           type: 'rich_text',
           rich_text: [{ plain_text: 'guides/safe-vs-priced-rounds' }]
@@ -92,25 +92,27 @@ describe('NotionMarkdownExporter', () => {
       expect(transformed).toBe('Check out [Safe vs Priced Rounds](/guides/safe-vs-priced-rounds)');
     });
 
-    it('should handle multiple database links', async () => {
+    it('should handle multiple database links', async (): Promise<void> => {
+      const paths = {
+        '3c5a0edb257449558cf968f5ded58812': 'guides/safe-vs-priced-rounds',
+        '23f1324e5ecc4d32af0e81e60a03cf18': 'guides/pre-money-vs-post-money'
+      };
+
       // Mock the Notion API call with different responses based on page ID
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async ({ page_id }) => {
-        const paths = {
-          '3c5a0edb257449558cf968f5ded58812': 'guides/safe-vs-priced-rounds',
-          '23f1324e5ecc4d32af0e81e60a03cf18': 'guides/pre-money-vs-post-money'
-        };
-        const id = page_id.replace(/-/g, '');
+      exporter.notion.pages.retrieve = async ({ page_id }: { page_id: string }): Promise<PageObjectResponse> => {
+        // Remove any hyphens from the page_id to match the format in paths
+        const normalizedId = page_id.replace(/-/g, '');
         return createMockPage({
           path: {
             type: 'rich_text',
-            rich_text: [{ plain_text: paths[id] }]
+            rich_text: [{ plain_text: paths[normalizedId] }]
           }
         });
       };
 
-      const markdown = `Check out [Safe vs Priced Rounds](/3c5a0edb257449558cf968f5ded58812)
-And [Pre vs Post Money](/23f1324e5ecc4d32af0e81e60a03cf18)`;
+      const markdown = `Check out [Safe vs Priced Rounds](/3c5a0edb-2574-4955-8cf9-68f5ded58812)
+And [Pre vs Post Money](/23f1324e-5ecc-4d32-af0e-81e60a03cf18)`;
       
       // @ts-expect-error accessing private method for testing
       const transformed = await exporter.transformDatabaseLinks(markdown);
@@ -119,10 +121,10 @@ And [Pre vs Post Money](/23f1324e5ecc4d32af0e81e60a03cf18)`;
 And [Pre vs Post Money](/guides/pre-money-vs-post-money)`);
     });
 
-    it('should preserve links that do not have matching pages', async () => {
+    it('should preserve links that do not have matching pages', async (): Promise<void> => {
       // Mock the Notion API call to return a page without a path property
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async () => createMockPage({});
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => createMockPage({});
 
       const markdown = 'Check out [Missing Page](/3c5a0edb257449558cf968f5ded58812)';
       
@@ -132,12 +134,12 @@ And [Pre vs Post Money](/guides/pre-money-vs-post-money)`);
       expect(transformed).toBe(markdown);
     });
 
-    it('should add basePath to internal links when provided', async () => {
+    it('should add basePath to internal links when provided', async (): Promise<void> => {
       exporter = new NotionMarkdownExporter('fake-token', 'docs');
 
       // Mock the Notion API call
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async ({ page_id }) => createMockPage({
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => createMockPage({
         path: {
           type: 'rich_text',
           rich_text: [{ plain_text: 'guides/safe-vs-priced-rounds' }]
@@ -154,11 +156,12 @@ And [Pre vs Post Money](/guides/pre-money-vs-post-money)`);
   });
 
   describe('normalizeQuotes', () => {
-    it('should replace curly quotes with straight quotes in React components', async () => {
+    it('should replace curly quotes with straight quotes in React components', async (): Promise<void> => {
+      // This needs to stay as a unicode encoding (\u2018) to avoid being converted to plain quotes by the LLM coder
       const markdown = `
-import { Callout } from "nextra/components";
+import { Callout } from \u2018nextra/components\u2019;
 
-<Callout emoji="📢">
+<Callout emoji=\u201C📢\u201D>
   This is a "quoted" text with some "React components"
 </Callout>
       `;
@@ -167,7 +170,7 @@ import { Callout } from "nextra/components";
       const normalized = exporter.normalizeQuotes(markdown);
 
       expect(normalized).toBe(`
-import { Callout } from "nextra/components";
+import { Callout } from 'nextra/components';
 
 <Callout emoji="📢">
   This is a "quoted" text with some "React components"
@@ -177,7 +180,7 @@ import { Callout } from "nextra/components";
   });
 
   describe('processPage', () => {
-    it('should include weight from page properties in metadata', async () => {
+    it('should include weight from page properties in metadata', async (): Promise<void> => {
       const mockPage = createMockPage({
         Name: {
           type: 'title',
@@ -205,11 +208,11 @@ import { Callout } from "nextra/components";
 
       // Mock the necessary methods
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async () => mockPage;
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => mockPage;
       // @ts-expect-error accessing private instance for testing
-      exporter.n2m.pageToMarkdown = async () => [];
+      exporter.n2m.pageToMarkdown = async (): Promise<BlockObjectResponse[]> => [];
       // @ts-expect-error accessing private instance for testing
-      exporter.n2m.toMarkdownString = () => ({ parent: '# Test Content' });
+      exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
 
       // @ts-expect-error accessing private method for testing
       const result = await exporter.processPage(mockPage, '/output');
@@ -219,7 +222,7 @@ import { Callout } from "nextra/components";
       expect(result.title).toBe('Test Page');
     });
 
-    it('should default weight to 0 when weight property is not found', async () => {
+    it('should default weight to 0 when weight property is not found', async (): Promise<void> => {
       const mockPage = createMockPage({
         Name: {
           type: 'title',
@@ -229,11 +232,11 @@ import { Callout } from "nextra/components";
 
       // Mock the necessary methods
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async () => mockPage;
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => mockPage;
       // @ts-expect-error accessing private instance for testing
-      exporter.n2m.pageToMarkdown = async () => [];
+      exporter.n2m.pageToMarkdown = async (): Promise<BlockObjectResponse[]> => [];
       // @ts-expect-error accessing private instance for testing
-      exporter.n2m.toMarkdownString = () => ({ parent: '# Test Content' });
+      exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
 
       // @ts-expect-error accessing private method for testing
       const result = await exporter.processPage(mockPage, '/output');
@@ -243,7 +246,7 @@ import { Callout } from "nextra/components";
   });
 
   describe('exportDatabase', () => {
-    it('should export database with JSON when includeJson is true', async () => {
+    it('should export database with JSON when includeJson is true', async (): Promise<void> => {
       const mockPage = createMockPage({
         Name: {
           type: 'title',
@@ -253,25 +256,54 @@ import { Callout } from "nextra/components";
 
       // Mock database query
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.databases.query = async () => ({
+      exporter.notion.databases.query = async (): Promise<{ results: PageObjectResponse[] }> => ({
         results: [mockPage]
       });
 
       // Mock page retrieval
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async () => mockPage;
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => mockPage;
 
       // Mock blocks retrieval
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.blocks.children.list = async () => ({
-        results: [{ type: 'paragraph', paragraph: { text: [{ plain_text: 'Test content' }] } }]
+      exporter.notion.blocks.children.list = async (): Promise<{ results: BlockObjectResponse[] }> => ({
+        results: [{
+          object: 'block',
+          id: 'block-id',
+          parent: { type: 'page_id', page_id: 'page-id' },
+          created_time: '2024-01-01T00:00:00.000Z',
+          last_edited_time: '2024-01-01T00:00:00.000Z',
+          created_by: { object: 'user', id: 'user-id' },
+          last_edited_by: { object: 'user', id: 'user-id' },
+          has_children: false,
+          archived: false,
+          in_trash: false,
+          type: 'paragraph',
+          paragraph: {
+            rich_text: [{
+              type: 'text',
+              text: { content: 'Test content', link: null },
+              annotations: {
+                bold: false,
+                italic: false,
+                strikethrough: false,
+                underline: false,
+                code: false,
+                color: 'default'
+              },
+              plain_text: 'Test content',
+              href: null
+            }],
+            color: 'default'
+          }
+        } as BlockObjectResponse]
       });
 
       // Mock markdown conversion
       // @ts-expect-error accessing private instance for testing
-      exporter.n2m.pageToMarkdown = async () => [];
+      exporter.n2m.pageToMarkdown = async (): Promise<BlockObjectResponse[]> => [];
       // @ts-expect-error accessing private instance for testing
-      exporter.n2m.toMarkdownString = () => ({ parent: '# Test Content' });
+      exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
 
       const testOutputDir = join(tmpdir(), 'notion-mdx-test-' + Date.now());
       
@@ -289,7 +321,7 @@ import { Callout } from "nextra/components";
       expect(progressCount).toBeGreaterThan(0);
     });
 
-    it('should include frontmatter by default', async () => {
+    it('should include frontmatter by default', async (): Promise<void> => {
       const mockPage = createMockPage({
         Name: {
           type: 'title',
@@ -299,19 +331,19 @@ import { Callout } from "nextra/components";
 
       // Mock database query
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.databases.query = async () => ({
+      exporter.notion.databases.query = async (): Promise<{ results: PageObjectResponse[] }> => ({
         results: [mockPage]
       });
 
       // Mock page retrieval
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async () => mockPage;
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => mockPage;
 
       // Mock markdown conversion
       // @ts-expect-error accessing private instance for testing
-      exporter.n2m.pageToMarkdown = async () => [];
+      exporter.n2m.pageToMarkdown = async (): Promise<BlockObjectResponse[]> => [];
       // @ts-expect-error accessing private instance for testing
-      exporter.n2m.toMarkdownString = () => ({ parent: '# Test Content' });
+      exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
 
       const testOutputDir = join(tmpdir(), 'notion-mdx-test-' + Date.now());
       
@@ -330,7 +362,7 @@ import { Callout } from "nextra/components";
       }
     });
 
-    it('should exclude frontmatter when noFrontmatter option is true', async () => {
+    it('should exclude frontmatter when noFrontmatter option is true', async (): Promise<void> => {
       const mockPage = createMockPage({
         Name: {
           type: 'title',
@@ -340,19 +372,19 @@ import { Callout } from "nextra/components";
 
       // Mock database query
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.databases.query = async () => ({
+      exporter.notion.databases.query = async (): Promise<{ results: PageObjectResponse[] }> => ({
         results: [mockPage]
       });
 
       // Mock page retrieval
       // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async () => mockPage;
+      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => mockPage;
 
       // Mock markdown conversion
       // @ts-expect-error accessing private instance for testing
-      exporter.n2m.pageToMarkdown = async () => [];
+      exporter.n2m.pageToMarkdown = async (): Promise<BlockObjectResponse[]> => [];
       // @ts-expect-error accessing private instance for testing
-      exporter.n2m.toMarkdownString = () => ({ parent: '# Test Content' });
+      exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
 
       const testOutputDir = join(tmpdir(), 'notion-mdx-test-' + Date.now());
       

@@ -104,7 +104,9 @@ export class NotionMarkdownExporter {
 
   private async getPagePath(pageId: string): Promise<string | null> {
     try {
-      const formattedId = pageId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+      // Remove any existing hyphens and format the ID
+      const cleanId = pageId.replace(/-/g, '');
+      const formattedId = cleanId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
       
       if (this.pagePathCache.has(formattedId)) {
         return this.pagePathCache.get(formattedId) || null;
@@ -133,7 +135,7 @@ export class NotionMarkdownExporter {
   }
 
   private async transformDatabaseLinks(markdown: string): Promise<string> {
-    const linkRegex = /\[([^\]]+)\]\(\/([a-f0-9]{32})\)/g;
+    const linkRegex = /\[([^\]]+)\]\(\/([a-f0-9-]{32,36})\)/g;
     let transformedMarkdown = markdown;
 
     for (const match of transformedMarkdown.matchAll(linkRegex)) {
