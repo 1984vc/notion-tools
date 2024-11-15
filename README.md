@@ -11,6 +11,8 @@ A CLI tool to export Notion database pages to MDX files with frontmatter metadat
 - Maintains Notion content structure using notion-to-md
 - Generates clean filenames from page titles
 - Includes creation and last edited timestamps
+- Supports internal link transformations
+- Optional JSON export for raw data
 
 ## Prerequisites
 
@@ -44,19 +46,52 @@ export NOTION_TOKEN=your_integration_token
 
 ## Usage
 
-### Export Command
+### Export to MDX
 
 ```bash
-notion_mdx export -d <database_id> -o <output_path>
+notion_mdx export-mdx --id <database_id> -o <output_path> [options]
 ```
 
 Options:
-- `-d, --database`: Required. The Notion database ID
+- `--id`: Required. The Notion database ID
 - `-o, --output`: Required. The output directory path for MDX files
+- `--include-json`: Optional. Include raw JSON export in output directory
+- `--base-path`: Optional. Base path for internal links (e.g., /docs)
+- `--no-frontmatter`: Optional. Exclude frontmatter from MDX files
 
 Example:
 ```bash
-notion_mdx export -d "123456789abcdef" -o "./content/posts"
+notion_mdx export-mdx --id "123456789abcdef" -o "./content/posts" --base-path "/docs"
+```
+
+### Export to JSON
+
+```bash
+notion_mdx json --id <database_id> -o <output_path>
+```
+
+Options:
+- `--id`: Required. The Notion database ID
+- `-o, --output`: Required. The output directory path for JSON file
+
+Example:
+```bash
+notion_mdx json --id "123456789abcdef" -o "./content/data"
+```
+
+### Export Raw JSON
+
+```bash
+notion_mdx raw-json --id <id> [-o <output_path>]
+```
+
+Options:
+- `--id`: Required. The Notion database or page ID
+- `-o, --output`: Optional. Output file path (defaults to stdout)
+
+Example:
+```bash
+notion_mdx raw-json --id "123456789abcdef" -o "./data/raw.json"
 ```
 
 ### Finding Your Database ID
@@ -78,6 +113,7 @@ title: Page Title
 notionId: page-id
 createdAt: 2024-01-01T00:00:00.000Z
 lastEditedAt: 2024-01-01T00:00:00.000Z
+weight: 0
 ---
 
 [Your page content here]
@@ -91,7 +127,7 @@ To develop locally:
 2. Install dependencies: `npm install`
 3. Set up your NOTION_TOKEN environment variable
 4. Link the package locally: `npm link`
-5. Run the CLI: `notion_mdx export -d <database_id> -o <output_path>`
+5. Run the CLI: `notion_mdx export-mdx --id <database_id> -o <output_path>`
 
 ### Testing and Linting
 
