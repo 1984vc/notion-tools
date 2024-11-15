@@ -45,7 +45,12 @@ interface RichTextProperty {
   }>;
 }
 
-type NotionProperty = TitleProperty | RichTextProperty;
+interface NumberProperty {
+  type: 'number';
+  number: number;
+}
+
+type NotionProperty = TitleProperty | RichTextProperty | NumberProperty;
 
 export class NotionExporter {
   private notion: Client;
@@ -140,12 +145,16 @@ export class NotionExporter {
     return this.transformDatabaseLinks(markdown);
   }
 
-  private async processPage(page: PageObjectResponse, baseOutputDir: string, index: number): Promise<PageExport> {
+  private async processPage(page: PageObjectResponse, baseOutputDir: string): Promise<PageExport> {
     const pageInfo = await this.notion.pages.retrieve({ page_id: page.id });
     
     if (!isFullPage(pageInfo)) {
       throw new Error('Retrieved incomplete page object');
     }
+
+    const properties = pageInfo.properties as Record<string, NotionProperty>;
+    const weightProp = (properties['weight'] || properties['Weight']) as NumberProperty | undefined;
+    const weight = weightProp?.type === 'number' ? weightProp.number : 0;
 
     const title = await this.getPageTitle(pageInfo);
     const markdown = await this.convertPageToMarkdown(page.id);
@@ -158,7 +167,7 @@ export class NotionExporter {
         notionId: page.id,
         createdAt: pageInfo.created_time,
         lastEditedAt: pageInfo.last_edited_time,
-        weight: index
+        weight
       },
       outputPath,
     };
@@ -181,7 +190,7 @@ export class NotionExporter {
 
     for (const [index, page] of response.results.entries()) {
       try {
-        const exportedPage = await this.processPage(page as PageObjectResponse, output, index);
+        const exportedPage = await this.processPage(page as PageObjectResponse, output);
 
         // Create necessary directories
         const dirPath = dirname(exportedPage.outputPath);

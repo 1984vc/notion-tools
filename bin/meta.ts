@@ -4,6 +4,7 @@ import { join, basename, dirname } from 'path';
 interface PageMeta {
   path: string;
   title: string;
+   weight: number;
 }
 
 export class MetaGenerator {
@@ -13,11 +14,12 @@ export class MetaGenerator {
     this.directoryPages = new Map();
   }
 
-  addPage(pagePath: string, title: string) {
+  addPage(pagePath: string, title: string,  weight: number) {
     const dir = dirname(pagePath);
     const pageInfo: PageMeta = {
       path: pagePath,
-      title
+      title,
+       weight
     };
 
     if (!this.directoryPages.has(dir)) {
@@ -26,8 +28,15 @@ export class MetaGenerator {
     this.directoryPages.get(dir)?.push(pageInfo);
   }
 
+  getDirectories(): string[] {
+    return Array.from(this.directoryPages.keys());
+  }
+
   private generateMetaContent(pages: PageMeta[]): string {
-    const entries = pages.map(page => {
+    // Sort pages by  weight
+    const sortedPages = [...pages].sort((a, b) => a. weight - b. weight);
+    
+    const entries = sortedPages.map(page => {
       // Get filename without extension
       const key = basename(page.path, '.mdx');
       // Escape any quotes in the title
@@ -41,14 +50,21 @@ ${entries.join(',\n')}
 `;
   }
 
+  async generateMetaFile(directory: string): Promise<void> {
+    const pages = this.directoryPages.get(directory);
+    if (!pages) return;
+
+    // Create directory if it doesn't exist
+    await mkdir(directory, { recursive: true });
+    
+    const metaPath = join(directory, '_meta.ts');
+    const content = this.generateMetaContent(pages);
+    await writeFile(metaPath, content, 'utf8');
+  }
+
   async generateMetaFiles(): Promise<void> {
-    for (const [dir, pages] of this.directoryPages.entries()) {
-      // Create directory if it doesn't exist
-      await mkdir(dir, { recursive: true });
-      
-      const metaPath = join(dir, '_meta.ts');
-      const content = this.generateMetaContent(pages);
-      await writeFile(metaPath, content, 'utf8');
+    for (const directory of this.getDirectories()) {
+      await this.generateMetaFile(directory);
     }
   }
 }

@@ -3,6 +3,7 @@ import { NotionMarkdownExporter } from '../bin/markdown';
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { readFile } from 'fs/promises';
 
 describe('NotionMarkdownExporter', () => {
   let exporter: NotionMarkdownExporter;
@@ -157,7 +158,7 @@ And [Pre vs Post Money](/guides/pre-money-vs-post-money)`);
       const markdown = `
 import { Callout } from "nextra/components";
 
-<Callout emoji=”📢”>
+<Callout emoji="📢">
   This is a "quoted" text with some "React components"
 </Callout>
       `;
@@ -176,7 +177,7 @@ import { Callout } from "nextra/components";
   });
 
   describe('processPage', () => {
-    it('should include weight in page metadata', async () => {
+    it('should include weight from page properties in metadata', async () => {
       const mockPage = createMockPage({
         Name: {
           type: 'title',
@@ -194,7 +195,11 @@ import { Callout } from "nextra/components";
                 color: 'default'
               }
             }
-          ]
+          ],
+        },
+        weight: {
+          type: 'number',
+          number: 5
         }
       });
 
@@ -207,11 +212,33 @@ import { Callout } from "nextra/components";
       exporter.n2m.toMarkdownString = () => ({ parent: '# Test Content' });
 
       // @ts-expect-error accessing private method for testing
-      const result = await exporter.processPage(mockPage, '/output', 5);
+      const result = await exporter.processPage(mockPage, '/output');
 
       expect(result.metadata.weight).toBe(5);
       expect(result.metadata.notionId).toBe('test-id');
       expect(result.title).toBe('Test Page');
+    });
+
+    it('should default weight to 0 when weight property is not found', async () => {
+      const mockPage = createMockPage({
+        Name: {
+          type: 'title',
+          title: [{ plain_text: 'Test Page' }]
+        }
+      });
+
+      // Mock the necessary methods
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async () => mockPage;
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.pageToMarkdown = async () => [];
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.toMarkdownString = () => ({ parent: '# Test Content' });
+
+      // @ts-expect-error accessing private method for testing
+      const result = await exporter.processPage(mockPage, '/output');
+
+      expect(result.metadata.weight).toBe(0);
     });
   });
 
@@ -247,17 +274,100 @@ import { Callout } from "nextra/components";
       exporter.n2m.toMarkdownString = () => ({ parent: '# Test Content' });
 
       const testOutputDir = join(tmpdir(), 'notion-mdx-test-' + Date.now());
-      const progress = await exporter.exportDatabase({
+      
+      let progressCount = 0;
+      for await (const progress of exporter.exportDatabase({
         database: 'test-db',
         output: testOutputDir,
         notionToken: 'fake-token',
         includeJson: true
+      })) {
+        progressCount++;
+        expect(progress.type).toBeDefined();
+      }
+
+      expect(progressCount).toBeGreaterThan(0);
+    });
+
+    it('should include frontmatter by default', async () => {
+      const mockPage = createMockPage({
+        Name: {
+          type: 'title',
+          title: [{ plain_text: 'Test Page' }]
+        }
       });
 
-      expect(progress).toHaveLength(3); // start, page, complete
-      expect(progress[0].type).toBe('start');
-      expect(progress[1].type).toBe('page');
-      expect(progress[2].type).toBe('complete');
+      // Mock database query
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.databases.query = async () => ({
+        results: [mockPage]
+      });
+
+      // Mock page retrieval
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async () => mockPage;
+
+      // Mock markdown conversion
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.pageToMarkdown = async () => [];
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.toMarkdownString = () => ({ parent: '# Test Content' });
+
+      const testOutputDir = join(tmpdir(), 'notion-mdx-test-' + Date.now());
+      
+      for await (const progress of exporter.exportDatabase({
+        database: 'test-db',
+        output: testOutputDir,
+        notionToken: 'fake-token'
+      })) {
+        if (progress.type === 'page' && progress.outputPath) {
+          const content = await readFile(progress.outputPath, 'utf8');
+          expect(content).toContain('---');
+          expect(content).toContain('title: Test Page');
+          expect(content).toContain('notionId: test-id');
+          expect(content).toContain('# Test Content');
+        }
+      }
+    });
+
+    it('should exclude frontmatter when noFrontmatter option is true', async () => {
+      const mockPage = createMockPage({
+        Name: {
+          type: 'title',
+          title: [{ plain_text: 'Test Page' }]
+        }
+      });
+
+      // Mock database query
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.databases.query = async () => ({
+        results: [mockPage]
+      });
+
+      // Mock page retrieval
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async () => mockPage;
+
+      // Mock markdown conversion
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.pageToMarkdown = async () => [];
+      // @ts-expect-error accessing private instance for testing
+      exporter.n2m.toMarkdownString = () => ({ parent: '# Test Content' });
+
+      const testOutputDir = join(tmpdir(), 'notion-mdx-test-' + Date.now());
+      
+      for await (const progress of exporter.exportDatabase({
+        database: 'test-db',
+        output: testOutputDir,
+        notionToken: 'fake-token',
+        noFrontmatter: true
+      })) {
+        if (progress.type === 'page' && progress.outputPath) {
+          const content = await readFile(progress.outputPath, 'utf8');
+          expect(content).not.toContain('---');
+          expect(content).toBe('# Test Content');
+        }
+      }
     });
   });
 });

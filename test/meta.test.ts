@@ -18,11 +18,13 @@ describe('MetaGenerator', () => {
       // Add pages to the same directory
       generator.addPage(
         join(testDir, 'guides/cap-table-101.mdx'),
-        'Cap Table 101'
+        'Cap Table 101',
+        0
       );
       generator.addPage(
         join(testDir, 'guides/safe-vs-priced-rounds.mdx'),
-        'Safe vs Priced Rounds'
+        'Safe vs Priced Rounds',
+        1
       );
 
       await generator.generateMetaFiles();
@@ -39,11 +41,13 @@ describe('MetaGenerator', () => {
       // Add pages to different directories
       generator.addPage(
         join(testDir, 'guides/cap-table-101.mdx'),
-        'Cap Table 101'
+        'Cap Table 101',
+        0
       );
       generator.addPage(
         join(testDir, 'blog/first-post.mdx'),
-        'First Post'
+        'First Post',
+        0
       );
 
       await generator.generateMetaFiles();
@@ -64,7 +68,8 @@ describe('MetaGenerator', () => {
     it('should escape special characters in titles', async () => {
       generator.addPage(
         join(testDir, 'guides/special-page.mdx'),
-        "Title with 'quotes' and \"double quotes\""
+        "Title with 'quotes' and \"double quotes\"",
+        0
       );
 
       await generator.generateMetaFiles();
@@ -72,6 +77,35 @@ describe('MetaGenerator', () => {
       const metaContent = await readFile(join(testDir, 'guides/_meta.ts'), 'utf8');
       expect(metaContent).toBe(`export default {
   'special-page': 'Title with \\'quotes\\' and "double quotes"'
+}
+`);
+    });
+
+    it('should maintain order based on sort_order', async () => {
+      // Add pages in random order
+      generator.addPage(
+        join(testDir, 'guides/third.mdx'),
+        'Third Page',
+        2
+      );
+      generator.addPage(
+        join(testDir, 'guides/first.mdx'),
+        'First Page',
+        0
+      );
+      generator.addPage(
+        join(testDir, 'guides/second.mdx'),
+        'Second Page',
+        1
+      );
+
+      await generator.generateMetaFiles();
+
+      const metaContent = await readFile(join(testDir, 'guides/_meta.ts'), 'utf8');
+      expect(metaContent).toBe(`export default {
+  'first': 'First Page',
+  'second': 'Second Page',
+  'third': 'Third Page'
 }
 `);
     });

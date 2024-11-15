@@ -11,6 +11,7 @@ interface ExportOptions {
   notionToken: string;
   includeJson?: boolean;
   basePath?: string;
+  noFrontmatter?: boolean;
 }
 
 interface PageExport {
@@ -26,11 +27,12 @@ interface PageExport {
 }
 
 interface ExportProgress {
-  type: 'start' | 'page' | 'complete';
+  type: 'start' | 'page' | 'meta' | 'json' | 'complete';
   totalPages?: number;
   currentPage?: number;
   pageId?: string;
   outputPath?: string;
+  directory?: string;
   error?: string;
 }
 
@@ -48,7 +50,12 @@ interface RichTextProperty {
   }>;
 }
 
-type NotionProperty = TitleProperty | RichTextProperty;
+interface NumberProperty {
+  type: 'number';
+  number: number;
+}
+
+type NotionProperty = TitleProperty | RichTextProperty | NumberProperty;
 
 export class NotionMarkdownExporter {
   private notion: Client;
@@ -67,7 +74,7 @@ export class NotionMarkdownExporter {
 
   private normalizeQuotes(content: string): string {
     // Replace curly double quotes (U+201C and U+201D) with straight double quotes
-    return content.replace(/[“”]/g, '"');
+    return content.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, '\'');
   }
 
   private async getPageTitle(pageInfo: PageObjectResponse): Promise<string> {
@@ -150,12 +157,16 @@ export class NotionMarkdownExporter {
     return this.normalizeQuotes(transformedMarkdown);
   }
 
-  private async processPage(page: PageObjectResponse, baseOutputDir: string, index: number): Promise<PageExport> {
+  private async processPage(page: PageObjectResponse, baseOutputDir: string): Promise<PageExport> {
     const pageInfo = await this.notion.pages.retrieve({ page_id: page.id });
     
     if (!isFullPage(pageInfo)) {
       throw new Error('Retrieved incomplete page object');
     }
+
+    const properties = pageInfo.properties as Record<string, NotionProperty>;
+    const weightProp = (properties['weight'] || properties['Weight']) as NumberProperty | undefined;
+    const weight = weightProp?.type === 'number' ? weightProp.number : 0;
 
     const title = await this.getPageTitle(pageInfo);
     const markdown = await this.convertPageToMarkdown(page.id);
@@ -168,7 +179,7 @@ export class NotionMarkdownExporter {
         notionId: page.id,
         createdAt: pageInfo.created_time,
         lastEditedAt: pageInfo.last_edited_time,
-        weight: index
+        weight
       },
       outputPath,
     };
@@ -193,9 +204,8 @@ export class NotionMarkdownExporter {
     await writeFile(jsonPath, JSON.stringify({ pages }, null, 2), 'utf8');
   }
 
-  public async exportDatabase({ database, output, includeJson, basePath }: ExportOptions): Promise<ExportProgress[]> {
+  public async *exportDatabase({ database, output, includeJson, basePath, noFrontmatter = false }: ExportOptions): AsyncGenerator<ExportProgress> {
     this.basePath = basePath || '';
-    const progress: ExportProgress[] = [];
     
     await mkdir(output, { recursive: true });
 
@@ -203,19 +213,21 @@ export class NotionMarkdownExporter {
       database_id: database
     });
 
-    progress.push({ 
+    yield { 
       type: 'start',
       totalPages: response.results.length 
-    });
+    };
 
     for (const [index, page] of response.results.entries()) {
       try {
-        const exportedPage = await this.processPage(page as PageObjectResponse, output, index);
+        const exportedPage = await this.processPage(page as PageObjectResponse, output);
 
         const dirPath = dirname(exportedPage.outputPath);
         await mkdir(dirPath, { recursive: true });
 
-        const content = `---
+        let content = exportedPage.content;
+        if (!noFrontmatter) {
+          content = `---
 title: ${exportedPage.title}
 notionId: ${exportedPage.metadata.notionId}
 createdAt: ${exportedPage.metadata.createdAt}
@@ -223,40 +235,50 @@ lastEditedAt: ${exportedPage.metadata.lastEditedAt}
 weight: ${exportedPage.metadata.weight}
 ---
 
-${exportedPage.content}`;
+${content}`;
+        }
 
         await writeFile(exportedPage.outputPath, content, 'utf8');
         
-        // Add page to meta generator
-        this.metaGenerator.addPage(exportedPage.outputPath, exportedPage.title);
+        // Add page to meta generator with weight
+        this.metaGenerator.addPage(exportedPage.outputPath, exportedPage.title, exportedPage.metadata.weight);
 
-        progress.push({
+        yield {
           type: 'page',
           currentPage: index + 1,
           totalPages: response.results.length,
           pageId: page.id,
           outputPath: exportedPage.outputPath
-        });
+        };
 
       } catch (error) {
-        progress.push({
+        yield {
           type: 'page',
           currentPage: index + 1,
           totalPages: response.results.length,
           pageId: page.id,
           error: error instanceof Error ? error.message : String(error)
-        });
+        };
       }
     }
 
     // Generate _meta.ts files
-    await this.metaGenerator.generateMetaFiles();
+    const directories = this.metaGenerator.getDirectories();
+    for (const dir of directories) {
+      await this.metaGenerator.generateMetaFile(dir);
+      yield {
+        type: 'meta',
+        directory: dir
+      };
+    }
 
     if (includeJson) {
       await this.exportDatabaseJson(database, output);
+      yield {
+        type: 'json'
+      };
     }
 
-    progress.push({ type: 'complete' });
-    return progress;
+    yield { type: 'complete' };
   }
 }

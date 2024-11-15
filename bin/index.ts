@@ -32,6 +32,7 @@ async function main(): Promise<void> {
     output: string;
     includeJson?: boolean;
     basePath?: string;
+    noFrontmatter?: boolean;
   }
 
   program
@@ -41,6 +42,7 @@ async function main(): Promise<void> {
     .requiredOption('-o, --output <path>', 'Output directory path')
     .option('--include-json', 'Include raw JSON export in output directory')
     .option('--base-path <path>', 'Base path for internal links (e.g., /docs)')
+    .option('--no-frontmatter', 'Exclude frontmatter from MDX files')
     .action(async (options: ExportOptions) => {
       if (!NOTION_TOKEN) {
         console.error('Error: NOTION_TOKEN environment variable is required');
@@ -50,16 +52,19 @@ async function main(): Promise<void> {
 
       try {
         const exporter = new NotionMarkdownExporter(NOTION_TOKEN);
-        const progress = await exporter.exportDatabase({
+        
+        // Create async iterator for progress updates
+        const progressIterator = exporter.exportDatabase({
           database: options.id,
           output: options.output,
           notionToken: NOTION_TOKEN,
           includeJson: options.includeJson,
-          basePath: options.basePath
+          basePath: options.basePath,
+          noFrontmatter: options.noFrontmatter
         });
 
-        // Handle progress updates
-        for (const update of progress) {
+        // Process progress updates as they come in
+        for await (const update of progressIterator) {
           switch (update.type) {
             case 'start':
               console.log(`🔍 Found ${update.totalPages} pages to export`);
@@ -71,10 +76,13 @@ async function main(): Promise<void> {
                 console.log(`✅ [${update.currentPage}/${update.totalPages}] Exported: ${update.outputPath}`);
               }
               break;
+            case 'meta':
+              console.log(`📝 Generated _meta.ts in ${update.directory}`);
+              break;
+            case 'json':
+              console.log('📄 Generated index.json with raw database content');
+              break;
             case 'complete':
-              if (options.includeJson) {
-                console.log('📄 Generated index.json with raw database content');
-              }
               console.log('\n✨ Export complete!');
               break;
           }
