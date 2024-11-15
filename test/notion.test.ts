@@ -130,10 +130,53 @@ And [Pre vs Post Money](/guides/pre-money-vs-post-money)`);
       
       expect(transformed).toBe(markdown);
     });
+
+    it('should add basePath to internal links when provided', async () => {
+      exporter = new NotionMarkdownExporter('fake-token', 'docs');
+
+      // Mock the Notion API call
+      // @ts-expect-error accessing private instance for testing
+      exporter.notion.pages.retrieve = async ({ page_id }) => createMockPage({
+        path: {
+          type: 'rich_text',
+          rich_text: [{ plain_text: 'guides/safe-vs-priced-rounds' }]
+        }
+      });
+
+      const markdown = 'Check out [Safe vs Priced Rounds](/3c5a0edb257449558cf968f5ded58812)';
+      
+      // @ts-expect-error accessing private method for testing
+      const transformed = await exporter.transformDatabaseLinks(markdown);
+      
+      expect(transformed).toBe('Check out [Safe vs Priced Rounds](/docs/guides/safe-vs-priced-rounds)');
+    });
+  });
+
+  describe('normalizeQuotes', () => {
+    it('should replace curly quotes with straight quotes in React components', async () => {
+      const markdown = `
+import { Callout } from "nextra/components";
+
+<Callout emoji=”📢”>
+  This is a "quoted" text with some "React components"
+</Callout>
+      `;
+
+      // @ts-expect-error accessing private method for testing
+      const normalized = exporter.normalizeQuotes(markdown);
+
+      expect(normalized).toBe(`
+import { Callout } from "nextra/components";
+
+<Callout emoji="📢">
+  This is a "quoted" text with some "React components"
+</Callout>
+      `);
+    });
   });
 
   describe('processPage', () => {
-    it('should include sort_order in page metadata', async () => {
+    it('should include weight in page metadata', async () => {
       const mockPage = createMockPage({
         Name: {
           type: 'title',
@@ -166,7 +209,7 @@ And [Pre vs Post Money](/guides/pre-money-vs-post-money)`);
       // @ts-expect-error accessing private method for testing
       const result = await exporter.processPage(mockPage, '/output', 5);
 
-      expect(result.metadata.sort_order).toBe(5);
+      expect(result.metadata.weight).toBe(5);
       expect(result.metadata.notionId).toBe('test-id');
       expect(result.title).toBe('Test Page');
     });

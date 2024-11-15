@@ -65,7 +65,7 @@ export class NotionJsonExporter {
       title,
       created_time: pageInfo.created_time,
       last_edited_time: pageInfo.last_edited_time,
-      sort_order: index,
+      weight: index,
       properties: pageInfo.properties,
       blocks: blocks.results
     };

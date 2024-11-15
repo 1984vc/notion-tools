@@ -3,14 +3,11 @@ import { NotionToMarkdown } from 'notion-to-md';
 import { mkdir, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
-import { MetaGenerator } from './meta.js';
 
 interface ExportOptions {
   database: string;
   output: string;
   notionToken: string;
-  includeJson?: boolean;
-  basePath?: string;
 }
 
 interface PageExport {
@@ -50,24 +47,15 @@ interface RichTextProperty {
 
 type NotionProperty = TitleProperty | RichTextProperty;
 
-export class NotionMarkdownExporter {
+export class NotionExporter {
   private notion: Client;
   private n2m: NotionToMarkdown;
   private pagePathCache: Map<string, string>;
-  private metaGenerator: MetaGenerator;
-  private basePath: string;
 
-  constructor(notionToken: string, basePath?: string) {
+  constructor(notionToken: string) {
     this.notion = new Client({ auth: notionToken });
     this.n2m = new NotionToMarkdown({ notionClient: this.notion });
     this.pagePathCache = new Map();
-    this.metaGenerator = new MetaGenerator();
-    this.basePath = basePath || '';
-  }
-
-  private normalizeQuotes(content: string): string {
-    // Replace curly double quotes (U+201C and U+201D) with straight double quotes
-    return content.replace(/[“”]/g, '"');
   }
 
   private async getPageTitle(pageInfo: PageObjectResponse): Promise<string> {
@@ -97,8 +85,10 @@ export class NotionMarkdownExporter {
 
   private async getPagePath(pageId: string): Promise<string | null> {
     try {
+      // Format the ID with hyphens if it doesn't have them
       const formattedId = pageId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
       
+      // Check cache first
       if (this.pagePathCache.has(formattedId)) {
         return this.pagePathCache.get(formattedId) || null;
       }
@@ -117,6 +107,7 @@ export class NotionMarkdownExporter {
         return path;
       }
 
+      // If no path property, cache null to avoid repeated lookups
       this.pagePathCache.set(formattedId, '');
       return null;
     } catch (error) {
@@ -126,6 +117,7 @@ export class NotionMarkdownExporter {
   }
 
   private async transformDatabaseLinks(markdown: string): Promise<string> {
+    // Match Markdown links with Notion page IDs
     const linkRegex = /\[([^\]]+)\]\(\/([a-f0-9]{32})\)/g;
     let transformedMarkdown = markdown;
 
@@ -134,8 +126,7 @@ export class NotionMarkdownExporter {
       const pagePath = await this.getPagePath(pageId);
 
       if (pagePath) {
-        const prefix = this.basePath ? `/${this.basePath}` : '';
-        const newLink = `[${linkText}](${prefix}/${pagePath})`;
+        const newLink = `[${linkText}](/${pagePath})`;
         transformedMarkdown = transformedMarkdown.replace(fullMatch, newLink);
       }
     }
@@ -146,8 +137,7 @@ export class NotionMarkdownExporter {
   private async convertPageToMarkdown(pageId: string): Promise<string> {
     const mdblocks = await this.n2m.pageToMarkdown(pageId);
     const { parent: markdown } = this.n2m.toMarkdownString(mdblocks);
-    const transformedMarkdown = await this.transformDatabaseLinks(markdown);
-    return this.normalizeQuotes(transformedMarkdown);
+    return this.transformDatabaseLinks(markdown);
   }
 
   private async processPage(page: PageObjectResponse, baseOutputDir: string, index: number): Promise<PageExport> {
@@ -174,29 +164,10 @@ export class NotionMarkdownExporter {
     };
   }
 
-  private async exportDatabaseJson(database: string, output: string): Promise<void> {
-    const response = await this.notion.databases.query({
-      database_id: database
-    });
-
-    const pages = [];
-    for (const page of response.results) {
-      const pageInfo = await this.notion.pages.retrieve({ page_id: page.id });
-      const blocks = await this.notion.blocks.children.list({ block_id: page.id });
-      pages.push({
-        page: pageInfo,
-        blocks: blocks.results
-      });
-    }
-
-    const jsonPath = join(output, 'index.json');
-    await writeFile(jsonPath, JSON.stringify({ pages }, null, 2), 'utf8');
-  }
-
-  public async exportDatabase({ database, output, includeJson, basePath }: ExportOptions): Promise<ExportProgress[]> {
-    this.basePath = basePath || '';
+  public async exportDatabase({ database, output }: ExportOptions): Promise<ExportProgress[]> {
     const progress: ExportProgress[] = [];
     
+    // Create output directory if it doesn't exist
     await mkdir(output, { recursive: true });
 
     const response = await this.notion.databases.query({
@@ -212,9 +183,11 @@ export class NotionMarkdownExporter {
       try {
         const exportedPage = await this.processPage(page as PageObjectResponse, output, index);
 
+        // Create necessary directories
         const dirPath = dirname(exportedPage.outputPath);
         await mkdir(dirPath, { recursive: true });
 
+        // Add frontmatter and write to file
         const content = `---
 title: ${exportedPage.title}
 notionId: ${exportedPage.metadata.notionId}
@@ -227,9 +200,6 @@ ${exportedPage.content}`;
 
         await writeFile(exportedPage.outputPath, content, 'utf8');
         
-        // Add page to meta generator
-        this.metaGenerator.addPage(exportedPage.outputPath, exportedPage.title);
-
         progress.push({
           type: 'page',
           currentPage: index + 1,
@@ -247,13 +217,6 @@ ${exportedPage.content}`;
           error: error instanceof Error ? error.message : String(error)
         });
       }
-    }
-
-    // Generate _meta.ts files
-    await this.metaGenerator.generateMetaFiles();
-
-    if (includeJson) {
-      await this.exportDatabaseJson(database, output);
     }
 
     progress.push({ type: 'complete' });

@@ -111,7 +111,7 @@ describe('NotionJsonExporter', () => {
 
       expect(result.id).toBe('test-id');
       expect(result.title).toBe('Test Page');
-      expect(result.sort_order).toBe(5);
+      expect(result.weight).toBe(5);
       expect(result.created_time).toBe('2023-01-01T00:00:00.000Z');
       expect(result.last_edited_time).toBe('2023-01-02T00:00:00.000Z');
       expect(result.properties).toBeDefined();

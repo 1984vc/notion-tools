@@ -31,6 +31,7 @@ async function main(): Promise<void> {
     id: string;
     output: string;
     includeJson?: boolean;
+    basePath?: string;
   }
 
   program
@@ -39,6 +40,7 @@ async function main(): Promise<void> {
     .requiredOption('--id <id>', 'Notion database ID')
     .requiredOption('-o, --output <path>', 'Output directory path')
     .option('--include-json', 'Include raw JSON export in output directory')
+    .option('--base-path <path>', 'Base path for internal links (e.g., /docs)')
     .action(async (options: ExportOptions) => {
       if (!NOTION_TOKEN) {
         console.error('Error: NOTION_TOKEN environment variable is required');
@@ -52,7 +54,8 @@ async function main(): Promise<void> {
           database: options.id,
           output: options.output,
           notionToken: NOTION_TOKEN,
-          includeJson: options.includeJson
+          includeJson: options.includeJson,
+          basePath: options.basePath
         });
 
         // Handle progress updates
