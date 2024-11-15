@@ -47,7 +47,7 @@ interface RichTextProperty {
 
 type NotionProperty = TitleProperty | RichTextProperty;
 
-export class NotionExporter {
+export class NotionMarkdownExporter {
   private notion: Client;
   private n2m: NotionToMarkdown;
   private pagePathCache: Map<string, string>;
@@ -85,10 +85,8 @@ export class NotionExporter {
 
   private async getPagePath(pageId: string): Promise<string | null> {
     try {
-      // Format the ID with hyphens if it doesn't have them
       const formattedId = pageId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
       
-      // Check cache first
       if (this.pagePathCache.has(formattedId)) {
         return this.pagePathCache.get(formattedId) || null;
       }
@@ -107,7 +105,6 @@ export class NotionExporter {
         return path;
       }
 
-      // If no path property, cache null to avoid repeated lookups
       this.pagePathCache.set(formattedId, '');
       return null;
     } catch (error) {
@@ -117,7 +114,6 @@ export class NotionExporter {
   }
 
   private async transformDatabaseLinks(markdown: string): Promise<string> {
-    // Match Markdown links with Notion page IDs
     const linkRegex = /\[([^\]]+)\]\(\/([a-f0-9]{32})\)/g;
     let transformedMarkdown = markdown;
 
@@ -167,7 +163,6 @@ export class NotionExporter {
   public async exportDatabase({ database, output }: ExportOptions): Promise<ExportProgress[]> {
     const progress: ExportProgress[] = [];
     
-    // Create output directory if it doesn't exist
     await mkdir(output, { recursive: true });
 
     const response = await this.notion.databases.query({
@@ -183,11 +178,9 @@ export class NotionExporter {
       try {
         const exportedPage = await this.processPage(page as PageObjectResponse, output, index);
 
-        // Create necessary directories
         const dirPath = dirname(exportedPage.outputPath);
         await mkdir(dirPath, { recursive: true });
 
-        // Add frontmatter and write to file
         const content = `---
 title: ${exportedPage.title}
 notionId: ${exportedPage.metadata.notionId}

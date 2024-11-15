@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { NotionExporter } from '../bin/notion';
+import { NotionMarkdownExporter } from '../bin/markdown';
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 
-describe('NotionExporter', () => {
-  let exporter: NotionExporter;
+describe('NotionMarkdownExporter', () => {
+  let exporter: NotionMarkdownExporter;
 
   const createMockPage = (properties: any): PageObjectResponse => ({
     object: 'page',
@@ -30,7 +30,7 @@ describe('NotionExporter', () => {
   } as PageObjectResponse);
 
   beforeEach(() => {
-    exporter = new NotionExporter('fake-token');
+    exporter = new NotionMarkdownExporter('fake-token');
   });
 
   describe('getPageTitle', () => {
