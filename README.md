@@ -1,12 +1,12 @@
-# @1984vc/notion_mdx
+# @1984vc/notion_export
 
-[![CI](https://github.com/1984vc/notion_mdx/actions/workflows/ci.yml/badge.svg)](https://github.com/1984vc/notion_mdx/actions/workflows/ci.yml)
+[![CI](https://github.com/1984vc/notion-export/actions/workflows/ci.yml/badge.svg)](https://github.com/1984vc/notion-export/actions/workflows/ci.yml)
 
-A CLI tool to export Notion database pages to MDX files with frontmatter metadata.
+A CLI tool to export Notion database pages to various format
 
 ## Features
 
-- Export all pages from a Notion database to MDX files
+- Export all pages from a Notion database to MD/MDX (Hextr and Nextra) files
 - Preserves page metadata in frontmatter
 - Maintains Notion content structure using notion-to-md
 - Generates clean filenames from page titles
@@ -25,13 +25,13 @@ A CLI tool to export Notion database pages to MDX files with frontmatter metadat
 You can install this CLI tool globally using npm:
 
 ```bash
-npm install -g @1984vc/notion_mdx@2.0.0
+npm install -g @1984vc/notion_export@2.0.0
 ```
 
 Or locally in your project:
 
 ```bash
-npm add -D @1984vc/notion_mdx@2.0.0
+npm add -D @1984vc/notion-export@2.0.0
 ```
 
 ## Setup
@@ -49,7 +49,7 @@ export NOTION_TOKEN=your_integration_token
 ### Export to MDX
 
 ```bash
-notion_mdx export-mdx --id <database_id> -o <output_path> [options]
+notion-export export-mdx --id <database_id> -o <output_path> [options]
 ```
 
 Options:
@@ -61,13 +61,13 @@ Options:
 
 Example:
 ```bash
-notion_mdx export-mdx --id "123456789abcdef" -o "./content/posts" --base-path "/docs"
+notion-export export-mdx --id "123456789abcdef" -o "./content/posts" --base-path "/docs"
 ```
 
 ### Export to JSON
 
 ```bash
-notion_mdx json --id <database_id> -o <output_path>
+notion-export json --id <database_id> -o <output_path>
 ```
 
 Options:
@@ -76,13 +76,13 @@ Options:
 
 Example:
 ```bash
-notion_mdx json --id "123456789abcdef" -o "./content/data"
+notion-export json --id "123456789abcdef" -o "./content/data"
 ```
 
 ### Export Raw JSON
 
 ```bash
-notion_mdx raw-json --id <id> [-o <output_path>]
+notion-export raw-json --id <id> [-o <output_path>]
 ```
 
 Options:
@@ -91,7 +91,7 @@ Options:
 
 Example:
 ```bash
-notion_mdx raw-json --id "123456789abcdef" -o "./data/raw.json"
+notion-export raw-json --id "123456789abcdef" -o "./data/raw.json"
 ```
 
 ### Finding Your Database ID
@@ -127,7 +127,7 @@ To develop locally:
 2. Install dependencies: `npm install`
 3. Set up your NOTION_TOKEN environment variable
 4. Link the package locally: `npm link`
-5. Run the CLI: `notion_mdx export-mdx --id <database_id> -o <output_path>`
+5. Run the CLI: `notion-export export-mdx --id <database_id> -o <output_path>`
 
 ### Testing and Linting
 

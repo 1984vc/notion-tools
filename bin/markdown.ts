@@ -2,7 +2,7 @@ import { Client, isFullPage } from '@notionhq/client';
 import { NotionToMarkdown } from 'notion-to-md';
 import { mkdir, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
-import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
+import { PageObjectResponse} from '@notionhq/client/build/src/api-endpoints.js';
 import { MetaGenerator } from './meta.js';
 
 interface ExportOptions {
@@ -12,6 +12,9 @@ interface ExportOptions {
   includeJson?: boolean;
   basePath?: string;
   noFrontmatter?: boolean;
+  extension?: string;
+  skipMeta?: boolean;
+  useHextraTransformers?: boolean;
 }
 
 interface PageExport {
@@ -57,6 +60,8 @@ interface NumberProperty {
 
 type NotionProperty = TitleProperty | RichTextProperty | NumberProperty;
 
+type CustomTransformer = (block: any) => Promise<string>;
+
 export class NotionMarkdownExporter {
   private notion: Client;
   private n2m: NotionToMarkdown;
@@ -64,16 +69,23 @@ export class NotionMarkdownExporter {
   private metaGenerator: MetaGenerator;
   private basePath: string;
 
-  constructor(notionToken: string, basePath?: string) {
+  constructor(notionToken: string, basePath?: string, transformers?: (n2m: NotionToMarkdown) => void) {
     this.notion = new Client({ auth: notionToken });
     this.n2m = new NotionToMarkdown({ notionClient: this.notion });
     this.pagePathCache = new Map();
     this.metaGenerator = new MetaGenerator();
     this.basePath = basePath || '';
+    
+    if (transformers) {
+      transformers(this.n2m);
+    }
+  }
+
+  public setCustomTransformer(type: string, transformer: CustomTransformer): void {
+    this.n2m.setCustomTransformer(type, transformer);
   }
 
   private normalizeQuotes(content: string): string {
-    // Replace curly double quotes (U+201C and U+201D) with straight double quotes
     return content.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, '\'');
   }
 
@@ -86,25 +98,26 @@ export class NotionMarkdownExporter {
     return titleProp?.title?.[0]?.plain_text || 'untitled';
   }
 
-  private async getOutputPath(pageInfo: PageObjectResponse, baseOutputDir: string, title: string): Promise<string> {
+  private async getOutputPath(pageInfo: PageObjectResponse, baseOutputDir: string, title: string, options: ExportOptions): Promise<string> {
     const properties = pageInfo.properties as Record<string, NotionProperty>;
     const pathProp = (properties['path'] || properties['Path']) as RichTextProperty | undefined;
     
     if (pathProp?.type === 'rich_text' && pathProp.rich_text[0]?.plain_text) {
       const customPath = pathProp.rich_text[0].plain_text;
       const pathParts = customPath.split('/');
-      const filename = `${pathParts.pop()}.mdx`;
+      const extension = options.extension || '.mdx';
+      const filename = `${pathParts.pop()}${extension}`;
       const directories = pathParts.join('/');
       return join(baseOutputDir, directories, filename);
     }
 
-    const filename = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.mdx`;
+    const extension = options.extension || '.mdx';
+    const filename = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}${extension}`;
     return join(baseOutputDir, filename);
   }
 
   private async getPagePath(pageId: string): Promise<string | null> {
     try {
-      // Remove any existing hyphens and format the ID
       const cleanId = pageId.replace(/-/g, '');
       const formattedId = cleanId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
       
@@ -159,7 +172,7 @@ export class NotionMarkdownExporter {
     return this.normalizeQuotes(transformedMarkdown);
   }
 
-  private async processPage(page: PageObjectResponse, baseOutputDir: string): Promise<PageExport> {
+  private async processPage(page: PageObjectResponse, baseOutputDir: string, options: ExportOptions): Promise<PageExport> {
     const pageInfo = await this.notion.pages.retrieve({ page_id: page.id });
     
     if (!isFullPage(pageInfo)) {
@@ -172,7 +185,7 @@ export class NotionMarkdownExporter {
 
     const title = await this.getPageTitle(pageInfo);
     const markdown = await this.convertPageToMarkdown(page.id);
-    const outputPath = await this.getOutputPath(pageInfo, baseOutputDir, title);
+    const outputPath = await this.getOutputPath(pageInfo, baseOutputDir, title, options);
 
     return {
       title,
@@ -206,13 +219,13 @@ export class NotionMarkdownExporter {
     await writeFile(jsonPath, JSON.stringify({ pages }, null, 2), 'utf8');
   }
 
-  public async *exportDatabase({ database, output, includeJson, basePath, noFrontmatter = false }: ExportOptions): AsyncGenerator<ExportProgress> {
-    this.basePath = basePath || '';
+  public async *exportDatabase(options: ExportOptions): AsyncGenerator<ExportProgress> {
+    this.basePath = options.basePath || '';
     
-    await mkdir(output, { recursive: true });
+    await mkdir(options.output, { recursive: true });
 
     const response = await this.notion.databases.query({
-      database_id: database
+      database_id: options.database
     });
 
     yield { 
@@ -222,13 +235,13 @@ export class NotionMarkdownExporter {
 
     for (const [index, page] of response.results.entries()) {
       try {
-        const exportedPage = await this.processPage(page as PageObjectResponse, output);
+        const exportedPage = await this.processPage(page as PageObjectResponse, options.output, options);
 
         const dirPath = dirname(exportedPage.outputPath);
         await mkdir(dirPath, { recursive: true });
 
         let content = exportedPage.content;
-        if (!noFrontmatter) {
+        if (!options.noFrontmatter) {
           content = `---
 title: ${exportedPage.title}
 notionId: ${exportedPage.metadata.notionId}
@@ -242,7 +255,6 @@ ${content}`;
 
         await writeFile(exportedPage.outputPath, content, 'utf8');
         
-        // Add page to meta generator with weight
         this.metaGenerator.addPage(exportedPage.outputPath, exportedPage.title, exportedPage.metadata.weight);
 
         yield {
@@ -264,18 +276,19 @@ ${content}`;
       }
     }
 
-    // Generate _meta.ts files
-    const directories = this.metaGenerator.getDirectories();
-    for (const dir of directories) {
-      await this.metaGenerator.generateMetaFile(dir);
-      yield {
-        type: 'meta',
-        directory: dir
-      };
+    if (!options.skipMeta) {
+      const directories = this.metaGenerator.getDirectories();
+      for (const dir of directories) {
+        await this.metaGenerator.generateMetaFile(dir);
+        yield {
+          type: 'meta',
+          directory: dir
+        };
+      }
     }
 
-    if (includeJson) {
-      await this.exportDatabaseJson(database, output);
+    if (options.includeJson) {
+      await this.exportDatabaseJson(options.database, options.output);
       yield {
         type: 'json'
       };
