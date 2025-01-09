@@ -119,6 +119,7 @@ interface RollupProperty {
   type: 'rollup';
   rollup: {
     type: 'array';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     array: Array<any>;
   };
 }
@@ -335,6 +336,7 @@ export class NotionMarkdownExporter {
 
         let content = exportedPage.content;
         if (!options.noFrontmatter) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const frontmatter: Record<string, any> = {
             title: exportedPage.title,
             notionId: exportedPage.metadata.notionId,
@@ -408,6 +410,9 @@ export class NotionMarkdownExporter {
             .map(([key, value]) => {
               if (Array.isArray(value)) {
                 return `${key}:\n${value.map(v => `  - ${v}`).join('\n')}`;
+              }
+              if (typeof value === 'string') {
+                return `${key}: ${value}`;
               }
               return `${key}: ${JSON.stringify(value)}`;
             })
