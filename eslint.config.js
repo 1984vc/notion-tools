@@ -4,10 +4,12 @@ import tseslintParser from '@typescript-eslint/parser';
 import globals from 'globals';
 
 export default [
+  {
+    ignores: ['**/dist/**', '**/node_modules/**']
+  },
   // Base config for all files
   {
     files: ['**/*.{js,mjs,cjs,ts}'],
-    ignores: ['dist/**', 'node_modules/**'],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'module',
