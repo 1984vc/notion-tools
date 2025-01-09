@@ -1,12 +1,13 @@
-# @1984vc/notion_export
+# @1984vc/notion-tools
 
 [![CI](https://github.com/1984vc/notion-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/1984vc/notion-tools/actions/workflows/ci.yml)
 
-A CLI tool to export Notion database pages to various format
+A CLI tool to export Notion database pages to various formats
 
 ## Features
 
-- Export all pages from a Notion database to MD/MDX (Hextr and Nextra) files
+- Export all pages from a Notion database to Markdown or MDX files
+- Supports Hextra (Markdown) and Nextra (MDX) formats
 - Preserves page metadata in frontmatter
 - Maintains Notion content structure using notion-to-md
 - Generates clean filenames from page titles
@@ -25,13 +26,13 @@ A CLI tool to export Notion database pages to various format
 You can install this CLI tool globally using npm:
 
 ```bash
-npm install -g @1984vc/notion_export@2.0.0
+npm install -g @1984vc/notion-tools@latest
 ```
 
 Or locally in your project:
 
 ```bash
-npm add -D @1984vc/notion-tools@2.0.0
+npm add -D @1984vc/notion-tools@latest
 ```
 
 ## Setup
@@ -46,22 +47,28 @@ export NOTION_TOKEN=your_integration_token
 
 ## Usage
 
-### Export to MDX
+### Export Formats
 
+#### Nextra (MDX)
 ```bash
-notion-tools export-mdx --id <database_id> -o <output_path> [options]
+notion-tools export nextra --id <database_id> -o <output_path> [options]
 ```
 
-Options:
+#### Hextra (Markdown)
+```bash
+notion-tools export hextra --id <database_id> -o <output_path> [options]
+```
+
+Options for both formats:
 - `--id`: Required. The Notion database ID
-- `-o, --output`: Required. The output directory path for MDX files
+- `-o, --output`: Required. The output directory path
 - `--include-json`: Optional. Include raw JSON export in output directory
 - `--base-path`: Optional. Base path for internal links (e.g., /docs)
-- `--no-frontmatter`: Optional. Exclude frontmatter from MDX files
+- `--no-frontmatter`: Optional. Exclude frontmatter from files
 
 Example:
 ```bash
-notion-tools export-mdx --id "123456789abcdef" -o "./content/posts" --base-path "/docs"
+notion-tools export nextra --id "123456789abcdef" -o "./content/posts" --base-path "/docs"
 ```
 
 ### Export to JSON
@@ -105,7 +112,7 @@ https://www.notion.so/workspace-name/123456789abcdef?v=...
 
 ## Output Format
 
-Each page is exported as an MDX file with frontmatter metadata:
+Each page is exported as a file with frontmatter metadata:
 
 ```mdx
 ---
@@ -127,7 +134,7 @@ To develop locally:
 2. Install dependencies: `npm install`
 3. Set up your NOTION_TOKEN environment variable
 4. Link the package locally: `npm link`
-5. Run the CLI: `notion-tools export-mdx --id <database_id> -o <output_path>`
+5. Run the CLI: `notion-tools export nextra --id <database_id> -o <output_path>`
 
 ### Testing and Linting
 
