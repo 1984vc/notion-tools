@@ -1,6 +1,6 @@
 # @1984vc/notion_export
 
-[![CI](https://github.com/1984vc/notion-export/actions/workflows/ci.yml/badge.svg)](https://github.com/1984vc/notion-export/actions/workflows/ci.yml)
+[![CI](https://github.com/1984vc/notion-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/1984vc/notion-tools/actions/workflows/ci.yml)
 
 A CLI tool to export Notion database pages to various format
 
@@ -31,7 +31,7 @@ npm install -g @1984vc/notion_export@2.0.0
 Or locally in your project:
 
 ```bash
-npm add -D @1984vc/notion-export@2.0.0
+npm add -D @1984vc/notion-tools@2.0.0
 ```
 
 ## Setup
@@ -49,7 +49,7 @@ export NOTION_TOKEN=your_integration_token
 ### Export to MDX
 
 ```bash
-notion-export export-mdx --id <database_id> -o <output_path> [options]
+notion-tools export-mdx --id <database_id> -o <output_path> [options]
 ```
 
 Options:
@@ -61,13 +61,13 @@ Options:
 
 Example:
 ```bash
-notion-export export-mdx --id "123456789abcdef" -o "./content/posts" --base-path "/docs"
+notion-tools export-mdx --id "123456789abcdef" -o "./content/posts" --base-path "/docs"
 ```
 
 ### Export to JSON
 
 ```bash
-notion-export json --id <database_id> -o <output_path>
+notion-tools json --id <database_id> -o <output_path>
 ```
 
 Options:
@@ -76,13 +76,13 @@ Options:
 
 Example:
 ```bash
-notion-export json --id "123456789abcdef" -o "./content/data"
+notion-tools json --id "123456789abcdef" -o "./content/data"
 ```
 
 ### Export Raw JSON
 
 ```bash
-notion-export raw-json --id <id> [-o <output_path>]
+notion-tools raw-json --id <id> [-o <output_path>]
 ```
 
 Options:
@@ -91,7 +91,7 @@ Options:
 
 Example:
 ```bash
-notion-export raw-json --id "123456789abcdef" -o "./data/raw.json"
+notion-tools raw-json --id "123456789abcdef" -o "./data/raw.json"
 ```
 
 ### Finding Your Database ID
@@ -127,7 +127,7 @@ To develop locally:
 2. Install dependencies: `npm install`
 3. Set up your NOTION_TOKEN environment variable
 4. Link the package locally: `npm link`
-5. Run the CLI: `notion-export export-mdx --id <database_id> -o <output_path>`
+5. Run the CLI: `notion-tools export-mdx --id <database_id> -o <output_path>`
 
 ### Testing and Linting
 
