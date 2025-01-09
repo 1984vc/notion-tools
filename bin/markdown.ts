@@ -58,7 +58,96 @@ interface NumberProperty {
   number: number;
 }
 
-type NotionProperty = TitleProperty | RichTextProperty | NumberProperty;
+interface SelectProperty {
+  type: 'select';
+  select: {
+    name: string;
+  } | null;
+}
+
+interface MultiSelectProperty {
+  type: 'multi_select';
+  multi_select: Array<{
+    name: string;
+  }>;
+}
+
+interface DateProperty {
+  type: 'date';
+  date: {
+    start: string;
+  } | null;
+}
+
+interface CheckboxProperty {
+  type: 'checkbox';
+  checkbox: boolean;
+}
+
+interface UrlProperty {
+  type: 'url';
+  url: string | null;
+}
+
+interface EmailProperty {
+  type: 'email';
+  email: string | null;
+}
+
+interface PhoneNumberProperty {
+  type: 'phone_number';
+  phone_number: string | null;
+}
+
+interface FormulaProperty {
+  type: 'formula';
+  formula: {
+    type: 'string' | 'number';
+    string?: string;
+    number?: number;
+  };
+}
+
+interface RelationProperty {
+  type: 'relation';
+  relation: Array<{
+    id: string;
+  }>;
+}
+
+interface RollupProperty {
+  type: 'rollup';
+  rollup: {
+    type: 'array';
+    array: Array<any>;
+  };
+}
+
+interface CreatedTimeProperty {
+  type: 'created_time';
+  created_time: string;
+}
+
+interface LastEditedTimeProperty {
+  type: 'last_edited_time';
+  last_edited_time: string;
+}
+
+interface CreatedByProperty {
+  type: 'created_by';
+  created_by: {
+    id: string;
+  };
+}
+
+interface LastEditedByProperty {
+  type: 'last_edited_by';
+  last_edited_by: {
+    id: string;
+  };
+}
+
+type NotionProperty = TitleProperty | RichTextProperty | NumberProperty | SelectProperty | MultiSelectProperty | DateProperty | CheckboxProperty | UrlProperty | EmailProperty | PhoneNumberProperty | FormulaProperty | RelationProperty | RollupProperty | CreatedTimeProperty | LastEditedTimeProperty | CreatedByProperty | LastEditedByProperty;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CustomTransformer = (block: any) => Promise<string>;
@@ -236,19 +325,96 @@ export class NotionMarkdownExporter {
 
     for (const [index, page] of response.results.entries()) {
       try {
-        const exportedPage = await this.processPage(page as PageObjectResponse, options.output, options);
+        if (!isFullPage(page)) {
+          throw new Error('Received partial page object');
+        }
 
+        const exportedPage = await this.processPage(page, options.output, options);
         const dirPath = dirname(exportedPage.outputPath);
         await mkdir(dirPath, { recursive: true });
 
         let content = exportedPage.content;
         if (!options.noFrontmatter) {
+          const frontmatter: Record<string, any> = {
+            title: exportedPage.title,
+            notionId: exportedPage.metadata.notionId,
+            createdAt: exportedPage.metadata.createdAt,
+            lastEditedAt: exportedPage.metadata.lastEditedAt,
+            weight: exportedPage.metadata.weight
+          };
+
+          // Add all page properties
+          const properties = page.properties as Record<string, NotionProperty>;
+          for (const [key, prop] of Object.entries(properties)) {
+            switch (prop.type) {
+              case 'title':
+                frontmatter[key] = prop.title?.[0]?.plain_text || '';
+                break;
+              case 'rich_text':
+                frontmatter[key] = prop.rich_text?.[0]?.plain_text || '';
+                break;
+              case 'number':
+                frontmatter[key] = prop.number;
+                break;
+              case 'select':
+                frontmatter[key] = prop.select?.name || '';
+                break;
+              case 'multi_select':
+                frontmatter[key] = prop.multi_select?.map(s => s.name) || [];
+                break;
+              case 'date':
+                frontmatter[key] = prop.date?.start || '';
+                break;
+              case 'checkbox':
+                frontmatter[key] = prop.checkbox;
+                break;
+              case 'url':
+                frontmatter[key] = prop.url || '';
+                break;
+              case 'email':
+                frontmatter[key] = prop.email || '';
+                break;
+              case 'phone_number':
+                frontmatter[key] = prop.phone_number || '';
+                break;
+              case 'formula':
+                frontmatter[key] = prop.formula?.string || prop.formula?.number || '';
+                break;
+              case 'relation':
+                frontmatter[key] = prop.relation?.map(r => r.id) || [];
+                break;
+              case 'rollup':
+                frontmatter[key] = prop.rollup?.array || [];
+                break;
+              case 'created_time':
+                frontmatter[key] = prop.created_time;
+                break;
+              case 'last_edited_time':
+                frontmatter[key] = prop.last_edited_time;
+                break;
+              case 'created_by':
+                frontmatter[key] = prop.created_by?.id || '';
+                break;
+              case 'last_edited_by':
+                frontmatter[key] = prop.last_edited_by?.id || '';
+                break;
+              default:
+                frontmatter[key] = '';
+            }
+          }
+
+          // Convert to YAML front-matter
+          const yaml = Object.entries(frontmatter)
+            .map(([key, value]) => {
+              if (Array.isArray(value)) {
+                return `${key}:\n${value.map(v => `  - ${v}`).join('\n')}`;
+              }
+              return `${key}: ${JSON.stringify(value)}`;
+            })
+            .join('\n');
+
           content = `---
-title: ${exportedPage.title}
-notionId: ${exportedPage.metadata.notionId}
-createdAt: ${exportedPage.metadata.createdAt}
-lastEditedAt: ${exportedPage.metadata.lastEditedAt}
-weight: ${exportedPage.metadata.weight}
+${yaml}
 ---
 
 ${content}`;
