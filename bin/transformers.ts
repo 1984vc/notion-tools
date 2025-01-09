@@ -1,6 +1,7 @@
 import { NotionToMarkdown } from 'notion-to-md';
 
-export function hextraTransform(n2m: NotionToMarkdown) {
+export function hextraTransform(n2m: NotionToMarkdown): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   n2m.setCustomTransformer('callout', async (block: any) => {
     // Get the callout icon (emoji or external icon)
     const icon = block.callout.icon?.emoji || '📄';
@@ -32,6 +33,7 @@ export function hextraTransform(n2m: NotionToMarkdown) {
     
     // Convert the rich text content to markdown
     const content = block.callout.rich_text
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((text: any) => text.plain_text)
       .join('');
     

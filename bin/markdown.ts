@@ -60,6 +60,7 @@ interface NumberProperty {
 
 type NotionProperty = TitleProperty | RichTextProperty | NumberProperty;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CustomTransformer = (block: any) => Promise<string>;
 
 export class NotionMarkdownExporter {

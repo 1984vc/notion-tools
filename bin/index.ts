@@ -21,7 +21,7 @@ async function main(): Promise<void> {
   // Check for required environment variable
   const NOTION_TOKEN = process.env.NOTION_TOKEN ?? "";
 
-  function requireNotionToken() {
+  function requireNotionToken(): void {
     if (!NOTION_TOKEN) {
       console.error('Error: NOTION_TOKEN environment variable is required');
       console.error('Please set it with: export NOTION_TOKEN=your_integration_token');

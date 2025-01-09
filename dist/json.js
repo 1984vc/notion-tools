@@ -42,7 +42,7 @@ export class NotionJsonExporter {
             try {
                 const exportedPage = await this.processPage(page, index);
                 pages.push(exportedPage);
-                const outputPath = join(output, 'notion-export.json');
+                const outputPath = join(output, 'notion-tools.json');
                 await writeFile(outputPath, JSON.stringify({ pages }, null, 2), 'utf8');
                 progress.push({
                     type: 'page',

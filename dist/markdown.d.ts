@@ -1,4 +1,5 @@
 import { NotionToMarkdown } from 'notion-to-md';
+import { BlockObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
 interface ExportOptions {
     database: string;
     output: string;
@@ -19,7 +20,7 @@ interface ExportProgress {
     directory?: string;
     error?: string;
 }
-type CustomTransformer = (block: any) => Promise<string>;
+type CustomTransformer = (block: BlockObjectResponse) => Promise<string>;
 export declare class NotionMarkdownExporter {
     private notion;
     private n2m;
