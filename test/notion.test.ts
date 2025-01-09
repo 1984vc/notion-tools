@@ -215,7 +215,11 @@ import { Callout } from 'nextra/components';
       exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
 
       // @ts-expect-error accessing private method for testing
-      const result = await exporter.processPage(mockPage, '/output');
+      const result = await exporter.processPage(mockPage, '/output', {
+        extension: '.mdx',
+        noFrontmatter: false,
+        skipMeta: false
+      });
 
       expect(result.metadata.weight).toBe(5);
       expect(result.metadata.notionId).toBe('test-id');
@@ -239,7 +243,11 @@ import { Callout } from 'nextra/components';
       exporter.n2m.toMarkdownString = (): { parent: string } => ({ parent: '# Test Content' });
 
       // @ts-expect-error accessing private method for testing
-      const result = await exporter.processPage(mockPage, '/output');
+      const result = await exporter.processPage(mockPage, '/output', {
+        extension: '.mdx',
+        noFrontmatter: false,
+        skipMeta: false
+      });
 
       expect(result.metadata.weight).toBe(0);
     });
