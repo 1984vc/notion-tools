@@ -1,11 +1,11 @@
 {
-  "name": "@1984vc/notion_mdx",
-  "version": "2.0.0",
-  "description": "CLI tool to export Notion database pages to MDX files with frontmatter",
-  "homepage": "https://github.com/1984vc/notion_mdx",
+  "name": "@1984vc/notion-tools",
+  "version": "3.0.0",
+  "description": "CLI tool to export Notion database pages to various formats",
+  "homepage": "https://github.com/1984vc/notion-tools",
   "main": "dist/index.js",
   "bin": {
-    "notion_mdx": "./dist/index.js"
+    "notion-tools": "./dist/index.js"
   },
   "type": "module",
   "scripts": {
@@ -30,7 +30,7 @@
   "dependencies": {
     "@notionhq/client": "^2.2.15",
     "commander": "^12.1.0",
-    "notion-to-md": "^3.1.1"
+    "notion-to-md": "^3.1.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",

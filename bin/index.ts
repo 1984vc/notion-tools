@@ -5,6 +5,7 @@ import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { NotionMarkdownExporter } from './markdown.js';
+import { hextraTransform } from './transformers.js';
 import { NotionJsonExporter } from './json.js';
 import { NotionRawExporter } from './raw-json.js';
 
@@ -18,12 +19,20 @@ async function main(): Promise<void> {
   );
 
   // Check for required environment variable
-  const NOTION_TOKEN = process.env.NOTION_TOKEN;
+  const NOTION_TOKEN = process.env.NOTION_TOKEN ?? "";
+
+  function requireNotionToken(): void {
+    if (!NOTION_TOKEN) {
+      console.error('Error: NOTION_TOKEN environment variable is required');
+      console.error('Please set it with: export NOTION_TOKEN=your_integration_token');
+      process.exit(1);
+    }
+  }
 
   const program = new Command();
 
   program
-    .name('notion_mdx')
+    .name('notion-tools')
     .description('Export Notion database pages to various formats')
     .version(packageJson.version);
 
@@ -35,23 +44,26 @@ async function main(): Promise<void> {
     noFrontmatter?: boolean;
   }
 
-  program
-    .command('export-mdx')
-    .description('Export pages from a Notion database to MDX files')
+  const exportCommand = program.command('export')
+    .description('Export Notion database to various formats');
+
+  exportCommand
+    .command('nextra')
+    .description('Export to MDX files for Nextra')
     .requiredOption('--id <id>', 'Notion database ID')
     .requiredOption('-o, --output <path>', 'Output directory path')
     .option('--include-json', 'Include raw JSON export in output directory')
     .option('--base-path <path>', 'Base path for internal links (e.g., /docs)')
     .option('--no-frontmatter', 'Exclude frontmatter from MDX files')
     .action(async (options: ExportOptions) => {
-      if (!NOTION_TOKEN) {
-        console.error('Error: NOTION_TOKEN environment variable is required');
-        console.error('Please set it with: export NOTION_TOKEN=your_integration_token');
-        process.exit(1);
-      }
+      requireNotionToken();
 
       try {
-        const exporter = new NotionMarkdownExporter(NOTION_TOKEN);
+        const exporter = new NotionMarkdownExporter(
+          NOTION_TOKEN,
+          undefined,
+          hextraTransform
+        );
         
         // Create async iterator for progress updates
         const progressIterator = exporter.exportDatabase({
@@ -60,7 +72,9 @@ async function main(): Promise<void> {
           notionToken: NOTION_TOKEN,
           includeJson: options.includeJson,
           basePath: options.basePath,
-          noFrontmatter: options.noFrontmatter
+          noFrontmatter: options.noFrontmatter,
+          extension: '.mdx',
+          skipMeta: false
         });
 
         // Process progress updates as they come in
@@ -93,17 +107,70 @@ async function main(): Promise<void> {
       }
     });
 
+  exportCommand
+    .command('hextra')
+    .description('Export to Markdown files for Hextra')
+    .requiredOption('--id <id>', 'Notion database ID')
+    .requiredOption('-o, --output <path>', 'Output directory path')
+    .option('--include-json', 'Include raw JSON export in output directory')
+    .option('--base-path <path>', 'Base path for internal links (e.g., /docs)')
+    .option('--no-frontmatter', 'Exclude frontmatter from Markdown files')
+    .action(async (options: ExportOptions) => {
+      requireNotionToken();
+
+      try {
+        const exporter = new NotionMarkdownExporter(
+          NOTION_TOKEN,
+          undefined,
+          hextraTransform
+        );
+        
+        // Create async iterator for progress updates
+        const progressIterator = exporter.exportDatabase({
+          database: options.id,
+          output: options.output,
+          notionToken: NOTION_TOKEN,
+          includeJson: options.includeJson,
+          basePath: options.basePath,
+          noFrontmatter: options.noFrontmatter,
+          extension: '.md',
+          skipMeta: true
+        });
+
+        // Process progress updates as they come in
+        for await (const update of progressIterator) {
+          switch (update.type) {
+            case 'start':
+              console.log(`🔍 Found ${update.totalPages} pages to export`);
+              break;
+            case 'page':
+              if (update.error) {
+                console.error(`❌ [${update.currentPage}/${update.totalPages}] Error processing page ${update.pageId}: ${update.error}`);
+              } else {
+                console.log(`✅ [${update.currentPage}/${update.totalPages}] Exported: ${update.outputPath}`);
+              }
+              break;
+            case 'json':
+              console.log('📄 Generated index.json with raw database content');
+              break;
+            case 'complete':
+              console.log('\n✨ Export complete!');
+              break;
+          }
+        }
+      } catch (error) {
+        console.error('❌ Export failed:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+      }
+    });
+
   program
     .command('json')
     .description('Export pages from a Notion database to a JSON file')
     .requiredOption('--id <id>', 'Notion database ID')
     .requiredOption('-o, --output <path>', 'Output directory path')
     .action(async (options: ExportOptions) => {
-      if (!NOTION_TOKEN) {
-        console.error('Error: NOTION_TOKEN environment variable is required');
-        console.error('Please set it with: export NOTION_TOKEN=your_integration_token');
-        process.exit(1);
-      }
+      requireNotionToken();
 
       try {
         const exporter = new NotionJsonExporter(NOTION_TOKEN);
@@ -143,11 +210,7 @@ async function main(): Promise<void> {
     .requiredOption('--id <id>', 'Notion database or page ID')
     .option('-o, --output <path>', 'Output file path (optional, defaults to stdout)')
     .action(async (options: { id: string, output?: string }) => {
-      if (!NOTION_TOKEN) {
-        console.error('Error: NOTION_TOKEN environment variable is required');
-        console.error('Please set it with: export NOTION_TOKEN=your_integration_token');
-        process.exit(1);
-      }
+      requireNotionToken();
 
       try {
         const exporter = new NotionRawExporter(NOTION_TOKEN);

@@ -11,16 +11,10 @@ interface ExportProgress {
     outputPath?: string;
     error?: string;
 }
-export declare class NotionExporter {
+export declare class NotionJsonExporter {
     private notion;
-    private n2m;
-    private pagePathCache;
     constructor(notionToken: string);
     private getPageTitle;
-    private getOutputPath;
-    private getPagePath;
-    private transformDatabaseLinks;
-    private convertPageToMarkdown;
     private processPage;
     exportDatabase({ database, output }: ExportOptions): Promise<ExportProgress[]>;
 }
