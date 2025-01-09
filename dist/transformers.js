@@ -1,4 +1,5 @@
 export function hextraTransform(n2m) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     n2m.setCustomTransformer('callout', async (block) => {
         // Get the callout icon (emoji or external icon)
         const icon = block.callout.icon?.emoji || '📄';
@@ -27,6 +28,7 @@ export function hextraTransform(n2m) {
         const calloutType = colorTypeMap[block.callout.color] || 'info';
         // Convert the rich text content to markdown
         const content = block.callout.rich_text
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .map((text) => text.plain_text)
             .join('');
         // Format for Hextra's Callout component
