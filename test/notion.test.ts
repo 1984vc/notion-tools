@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { urlTransform } from '../bin/transformers';
 import { NotionMarkdownExporter } from '../bin/markdown';
 import type { PageObjectResponse, BlockObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { join } from 'path';
@@ -70,88 +71,6 @@ describe('NotionMarkdownExporter', () => {
       // @ts-expect-error accessing private method for testing
       const title = await exporter.getPageTitle(mockPage);
       expect(title).toBe('untitled');
-    });
-  });
-
-  describe('transformDatabaseLinks', () => {
-    it('should transform database links to use page paths', async (): Promise<void> => {
-      // Mock the Notion API call
-      // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => createMockPage({
-        path: {
-          type: 'rich_text',
-          rich_text: [{ plain_text: 'guides/safe-vs-priced-rounds' }]
-        }
-      });
-
-      const markdown = 'Check out [Safe vs Priced Rounds](/3c5a0edb257449558cf968f5ded58812)';
-      
-      // @ts-expect-error accessing private method for testing
-      const transformed = await exporter.transformDatabaseLinks(markdown);
-      
-      expect(transformed).toBe('Check out [Safe vs Priced Rounds](/guides/safe-vs-priced-rounds)');
-    });
-
-    it('should handle multiple database links', async (): Promise<void> => {
-      const paths = {
-        '3c5a0edb257449558cf968f5ded58812': 'guides/safe-vs-priced-rounds',
-        '23f1324e5ecc4d32af0e81e60a03cf18': 'guides/pre-money-vs-post-money'
-      };
-
-      // Mock the Notion API call with different responses based on page ID
-      // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async ({ page_id }: { page_id: string }): Promise<PageObjectResponse> => {
-        // Remove any hyphens from the page_id to match the format in paths
-        const normalizedId = page_id.replace(/-/g, '');
-        return createMockPage({
-          path: {
-            type: 'rich_text',
-            rich_text: [{ plain_text: paths[normalizedId] }]
-          }
-        });
-      };
-
-      const markdown = `Check out [Safe vs Priced Rounds](/3c5a0edb-2574-4955-8cf9-68f5ded58812)
-And [Pre vs Post Money](/23f1324e-5ecc-4d32-af0e-81e60a03cf18)`;
-      
-      // @ts-expect-error accessing private method for testing
-      const transformed = await exporter.transformDatabaseLinks(markdown);
-      
-      expect(transformed).toBe(`Check out [Safe vs Priced Rounds](/guides/safe-vs-priced-rounds)
-And [Pre vs Post Money](/guides/pre-money-vs-post-money)`);
-    });
-
-    it('should preserve links that do not have matching pages', async (): Promise<void> => {
-      // Mock the Notion API call to return a page without a path property
-      // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => createMockPage({});
-
-      const markdown = 'Check out [Missing Page](/3c5a0edb257449558cf968f5ded58812)';
-      
-      // @ts-expect-error accessing private method for testing
-      const transformed = await exporter.transformDatabaseLinks(markdown);
-      
-      expect(transformed).toBe(markdown);
-    });
-
-    it('should add basePath to internal links when provided', async (): Promise<void> => {
-      exporter = new NotionMarkdownExporter('fake-token', 'docs');
-
-      // Mock the Notion API call
-      // @ts-expect-error accessing private instance for testing
-      exporter.notion.pages.retrieve = async (): Promise<PageObjectResponse> => createMockPage({
-        path: {
-          type: 'rich_text',
-          rich_text: [{ plain_text: 'guides/safe-vs-priced-rounds' }]
-        }
-      });
-
-      const markdown = 'Check out [Safe vs Priced Rounds](/3c5a0edb257449558cf968f5ded58812)';
-      
-      // @ts-expect-error accessing private method for testing
-      const transformed = await exporter.transformDatabaseLinks(markdown);
-      
-      expect(transformed).toBe('Check out [Safe vs Priced Rounds](/docs/guides/safe-vs-priced-rounds)');
     });
   });
 
@@ -408,6 +327,111 @@ import { Callout } from 'nextra/components';
           expect(content).toBe('# Test Content');
         }
       }
+    });
+  });
+
+  describe('URL transformation', () => {
+    let mockN2m: any;
+
+    beforeEach(() => {
+      mockN2m = {
+        setCustomTransformer: vi.fn()
+      };
+    });
+
+    it('should not set up transformer when baseUrl is not provided', async () => {
+      urlTransform(mockN2m);
+      expect(mockN2m.setCustomTransformer).not.toHaveBeenCalled();
+    });
+
+    it('should transform absolute URLs to relative when they match baseUrl', async () => {
+      const baseUrl = 'https://example.com';
+      const mockBlock = {
+        paragraph: {
+          rich_text: [
+            {
+              href: 'https://example.com/docs/page',
+              text: { content: 'Test Link' }
+            }
+          ]
+        }
+      };
+
+      urlTransform(mockN2m, baseUrl);
+      const transformer = mockN2m.setCustomTransformer.mock.calls[0][1];
+      const result = await transformer(mockBlock);
+
+      expect(result.paragraph.rich_text[0].href).toBe('/docs/page');
+    });
+
+    it('should convert exact baseUrl match to root path', async () => {
+      const baseUrl = 'https://example.com';
+      const mockBlock = {
+        paragraph: {
+          rich_text: [
+            {
+              href: 'https://example.com',
+              text: { content: 'Home' }
+            }
+          ]
+        }
+      };
+
+      urlTransform(mockN2m, baseUrl);
+      const transformer = mockN2m.setCustomTransformer.mock.calls[0][1];
+      const result = await transformer(mockBlock);
+
+      expect(result.paragraph.rich_text[0].href).toBe('/');
+    });
+
+    it('should not transform URLs that do not match baseUrl', async () => {
+      const baseUrl = 'https://example.com';
+      const mockBlock = {
+        paragraph: {
+          rich_text: [
+            {
+              href: 'https://different-domain.com/page',
+              text: { content: 'External Link' }
+            }
+          ]
+        }
+      };
+
+      urlTransform(mockN2m, baseUrl);
+      const transformer = mockN2m.setCustomTransformer.mock.calls[0][1];
+      const result = await transformer(mockBlock);
+
+      expect(result.paragraph.rich_text[0].href).toBe('https://different-domain.com/page');
+    });
+
+    it('should handle multiple links in the same paragraph', async () => {
+      const baseUrl = 'https://example.com';
+      const mockBlock = {
+        paragraph: {
+          rich_text: [
+            {
+              href: 'https://example.com/docs/page1',
+              text: { content: 'Internal Link 1' }
+            },
+            {
+              href: 'https://different-domain.com/page',
+              text: { content: 'External Link' }
+            },
+            {
+              href: 'https://example.com/docs/page2',
+              text: { content: 'Internal Link 2' }
+            }
+          ]
+        }
+      };
+
+      urlTransform(mockN2m, baseUrl);
+      const transformer = mockN2m.setCustomTransformer.mock.calls[0][1];
+      const result = await transformer(mockBlock);
+
+      expect(result.paragraph.rich_text[0].href).toBe('/docs/page1');
+      expect(result.paragraph.rich_text[1].href).toBe('https://different-domain.com/page');
+      expect(result.paragraph.rich_text[2].href).toBe('/docs/page2');
     });
   });
 });

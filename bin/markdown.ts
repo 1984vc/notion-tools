@@ -4,13 +4,13 @@ import { mkdir, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { PageObjectResponse} from '@notionhq/client/build/src/api-endpoints.js';
 import { MetaGenerator } from './meta.js';
+import { urlTransform } from './transformers.js';
 
 interface ExportOptions {
   database: string;
   output: string;
   notionToken: string;
   includeJson?: boolean;
-  basePath?: string;
   noFrontmatter?: boolean;
   extension?: string;
   skipMeta?: boolean;
@@ -166,15 +166,20 @@ export class NotionMarkdownExporter {
   private n2m: NotionToMarkdown;
   private pagePathCache: Map<string, string>;
   private metaGenerator: MetaGenerator;
-  private basePath: string;
+  private baseUrl: string;
 
-  constructor(notionToken: string, basePath?: string, transformers?: (n2m: NotionToMarkdown) => void) {
+  constructor(notionToken: string, baseUrl?: string, transformers?: (n2m: NotionToMarkdown) => void) {
     this.notion = new Client({ auth: notionToken });
     this.n2m = new NotionToMarkdown({ notionClient: this.notion });
     this.pagePathCache = new Map();
     this.metaGenerator = new MetaGenerator();
-    this.basePath = basePath || '';
+    this.baseUrl = baseUrl || '';
     
+    // Apply URL transformer if baseUrl is provided
+    if (this.baseUrl) {
+      urlTransform(this.n2m, this.baseUrl);
+    }
+
     if (transformers) {
       transformers(this.n2m);
     }
@@ -246,29 +251,10 @@ export class NotionMarkdownExporter {
     }
   }
 
-  private async transformDatabaseLinks(markdown: string): Promise<string> {
-    const linkRegex = /\[([^\]]+)\]\(\/([a-f0-9-]{32,36})\)/g;
-    let transformedMarkdown = markdown;
-
-    for (const match of transformedMarkdown.matchAll(linkRegex)) {
-      const [fullMatch, linkText, pageId] = match;
-      const pagePath = await this.getPagePath(pageId);
-
-      if (pagePath) {
-        const prefix = this.basePath ? `/${this.basePath}` : '';
-        const newLink = `[${linkText}](${prefix}/${pagePath})`;
-        transformedMarkdown = transformedMarkdown.replace(fullMatch, newLink);
-      }
-    }
-
-    return transformedMarkdown;
-  }
-
   private async convertPageToMarkdown(pageId: string): Promise<string> {
     const mdblocks = await this.n2m.pageToMarkdown(pageId);
     const { parent: markdown } = this.n2m.toMarkdownString(mdblocks);
-    const transformedMarkdown = await this.transformDatabaseLinks(markdown);
-    return this.normalizeQuotes(transformedMarkdown);
+    return this.normalizeQuotes(markdown);
   }
 
   private async processPage(page: PageObjectResponse, baseOutputDir: string, options: ExportOptions): Promise<PageExport> {
@@ -319,7 +305,6 @@ export class NotionMarkdownExporter {
   }
 
   public async *exportDatabase(options: ExportOptions): AsyncGenerator<ExportProgress> {
-    this.basePath = options.basePath || '';
     
     await mkdir(options.output, { recursive: true });
 

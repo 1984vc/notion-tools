@@ -1,5 +1,32 @@
 import { NotionToMarkdown } from 'notion-to-md';
 
+export function urlTransform(n2m: NotionToMarkdown, baseUrl?: string): void {
+  if (!baseUrl) return;
+
+  // Transform absolute links to relative links if they match the base URL
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  n2m.setCustomTransformer('paragraph', async (block: any) => {
+    if (!block.paragraph?.rich_text) return block;
+
+    // Transform URLs in rich_text array
+    block.paragraph.rich_text = block.paragraph.rich_text.map((text: any) => {
+      if (!text.href || !text.href.startsWith(baseUrl)) return text;
+
+      // If URL matches baseUrl exactly, convert to root path
+      if (text.href === baseUrl) {
+        text.href = '/';
+        return text;
+      }
+
+      // Convert absolute URL to relative by removing baseUrl
+      text.href = text.href.replace(baseUrl, '');
+      return text;
+    });
+
+    return block;
+  });
+}
+
 export function hextraTransform(n2m: NotionToMarkdown): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   n2m.setCustomTransformer('callout', async (block: any) => {

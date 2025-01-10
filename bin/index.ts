@@ -40,7 +40,7 @@ async function main(): Promise<void> {
     id: string;
     output: string;
     includeJson?: boolean;
-    basePath?: string;
+    baseUrl?: string;
     noFrontmatter?: boolean;
   }
 
@@ -53,7 +53,7 @@ async function main(): Promise<void> {
     .requiredOption('--id <id>', 'Notion database ID')
     .requiredOption('-o, --output <path>', 'Output directory path')
     .option('--include-json', 'Include raw JSON export in output directory')
-    .option('--base-path <path>', 'Base path for internal links (e.g., /docs)')
+    .option('--base-url <path>', 'Base path for internal links (e.g., /docs)')
     .option('--no-frontmatter', 'Exclude frontmatter from MDX files')
     .action(async (options: ExportOptions) => {
       requireNotionToken();
@@ -61,8 +61,7 @@ async function main(): Promise<void> {
       try {
         const exporter = new NotionMarkdownExporter(
           NOTION_TOKEN,
-          undefined,
-          hextraTransform
+          undefined
         );
         
         // Create async iterator for progress updates
@@ -71,7 +70,6 @@ async function main(): Promise<void> {
           output: options.output,
           notionToken: NOTION_TOKEN,
           includeJson: options.includeJson,
-          basePath: options.basePath,
           noFrontmatter: options.noFrontmatter,
           extension: '.mdx',
           skipMeta: false
@@ -113,7 +111,7 @@ async function main(): Promise<void> {
     .requiredOption('--id <id>', 'Notion database ID')
     .requiredOption('-o, --output <path>', 'Output directory path')
     .option('--include-json', 'Include raw JSON export in output directory')
-    .option('--base-path <path>', 'Base path for internal links (e.g., /docs)')
+    .option('--base-url <path>', 'Base path for internal links (e.g., /docs)')
     .option('--no-frontmatter', 'Exclude frontmatter from Markdown files')
     .action(async (options: ExportOptions) => {
       requireNotionToken();
@@ -121,7 +119,7 @@ async function main(): Promise<void> {
       try {
         const exporter = new NotionMarkdownExporter(
           NOTION_TOKEN,
-          undefined,
+          options.baseUrl,
           hextraTransform
         );
         
@@ -131,7 +129,6 @@ async function main(): Promise<void> {
           output: options.output,
           notionToken: NOTION_TOKEN,
           includeJson: options.includeJson,
-          basePath: options.basePath,
           noFrontmatter: options.noFrontmatter,
           extension: '.md',
           skipMeta: true
