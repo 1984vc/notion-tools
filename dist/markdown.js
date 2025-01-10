@@ -156,6 +156,7 @@ export class NotionMarkdownExporter {
                     // Add all page properties
                     const properties = page.properties;
                     for (const [key, prop] of Object.entries(properties)) {
+                        console.log(key, prop);
                         switch (prop.type) {
                             case 'title':
                                 frontmatter[key] = prop.title?.[0]?.plain_text || '';
@@ -207,6 +208,9 @@ export class NotionMarkdownExporter {
                                 break;
                             case 'last_edited_by':
                                 frontmatter[key] = prop.last_edited_by?.id || '';
+                                break;
+                            case 'people':
+                                frontmatter[key] = prop.people?.map(p => p.id) || [];
                                 break;
                             default:
                                 frontmatter[key] = '';
