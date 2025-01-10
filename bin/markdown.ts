@@ -356,7 +356,6 @@ export class NotionMarkdownExporter {
           // Add all page properties
           const properties = page.properties as Record<string, NotionProperty>;
           for (const [key, prop] of Object.entries(properties)) {
-            console.log(key, prop);
             switch (prop.type) {
               case 'title':
                 frontmatter[key] = prop.title?.[0]?.plain_text || '';
