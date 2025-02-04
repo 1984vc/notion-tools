@@ -254,7 +254,7 @@ export class NotionMarkdownExporter {
   private async convertPageToMarkdown(pageId: string): Promise<string> {
     const mdblocks = await this.n2m.pageToMarkdown(pageId);
     const { parent: markdown } = this.n2m.toMarkdownString(mdblocks);
-    return this.normalizeQuotes(markdown);
+    return this.normalizeQuotes(markdown ?? "");
   }
 
   private async processPage(page: PageObjectResponse, baseOutputDir: string, options: ExportOptions): Promise<PageExport> {
