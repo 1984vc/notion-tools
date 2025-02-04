@@ -1,21 +1,20 @@
-interface ExportOptions {
-    database: string;
-    output: string;
+import type { GetPageResponse, GetBlockResponse } from '@notionhq/client/build/src/api-endpoints.js';
+interface JSONExportOption {
+    id: string;
     notionToken: string;
+    rawJSON?: boolean;
 }
-interface ExportProgress {
-    type: 'start' | 'page' | 'complete';
-    totalPages?: number;
-    currentPage?: number;
-    pageId?: string;
-    outputPath?: string;
-    error?: string;
+export interface PageWithBlocks {
+    page: GetPageResponse;
+    blocks: {
+        results: GetBlockResponse[];
+    };
 }
-export declare class NotionJsonExporter {
+export declare class NotionJSONExporter {
     private notion;
     constructor(notionToken: string);
-    private getPageTitle;
-    private processPage;
-    exportDatabase({ database, output }: ExportOptions): Promise<ExportProgress[]>;
+    private fetchDatabase;
+    private fetchPage;
+    exportJSON({ id, rawJSON }: JSONExportOption): Promise<string>;
 }
 export {};

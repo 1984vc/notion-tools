@@ -1,130 +1,71 @@
-import { Client, isFullPage } from '@notionhq/client';
-import { mkdir, writeFile } from 'fs/promises';
-import { join } from 'path';
-import { PageObjectResponse, BlockObjectResponse, PartialBlockObjectResponse } from '@notionhq/client/build/src/api-endpoints.js';
+import { Client } from '@notionhq/client';
 
-interface ExportOptions {
-  database: string;
-  output: string;
-  notionToken: string;
-}
+import type { GetPageResponse, GetBlockResponse, QueryDatabaseResponse } from '@notionhq/client/build/src/api-endpoints.js';
+import { databaseTransformer, pageTransformer } from './transformers.js';
 
-interface ExportProgress {
-  type: 'start' | 'page' | 'complete';
-  totalPages?: number;
-  currentPage?: number;
-  pageId?: string;
-  outputPath?: string;
-  error?: string;
-}
-
-interface TitleProperty {
-  type: 'title';
-  title: Array<{
-    plain_text: string;
-  }>;
-}
-
-interface RichTextProperty {
-  type: 'rich_text';
-  rich_text: Array<{
-    plain_text: string;
-  }>;
-}
-
-type NotionProperty = TitleProperty | RichTextProperty;
-
-interface ProcessedPage {
+interface JSONExportOption {
   id: string;
-  title: string;
-  created_time: string;
-  last_edited_time: string;
-  weight: number;
-  properties: Record<string, unknown>;
-  blocks: (BlockObjectResponse | PartialBlockObjectResponse)[];
+  notionToken: string;
+  rawJSON?: boolean;
 }
 
-export class NotionJsonExporter {
+interface NotionError {
+  code?: string;
+  status?: number;
+  message?: string;
+}
+
+export interface PageWithBlocks {
+  page: GetPageResponse;
+  blocks: {
+    results: GetBlockResponse[];
+  };
+}
+
+export class NotionJSONExporter {
   private notion: Client;
 
   constructor(notionToken: string) {
     this.notion = new Client({ auth: notionToken });
   }
 
-  private async getPageTitle(pageInfo: PageObjectResponse): Promise<string> {
-    const properties = pageInfo.properties as Record<string, NotionProperty>;
-    const titleProp = Object.values(properties).find(
-      (prop): prop is TitleProperty => prop.type === 'title'
-    );
-
-    return titleProp?.title?.[0]?.plain_text || 'untitled';
-  }
-
-  private async processPage(page: PageObjectResponse, index: number): Promise<ProcessedPage> {
-    const pageInfo = await this.notion.pages.retrieve({ page_id: page.id });
-    
-    if (!isFullPage(pageInfo)) {
-      throw new Error('Retrieved incomplete page object');
-    }
-
-    const title = await this.getPageTitle(pageInfo);
-    const blocks = await this.notion.blocks.children.list({ block_id: page.id });
-
-    return {
-      id: page.id,
-      title,
-      created_time: pageInfo.created_time,
-      last_edited_time: pageInfo.last_edited_time,
-      weight: index,
-      properties: pageInfo.properties,
-      blocks: blocks.results
-    };
-  }
-
-  public async exportDatabase({ database, output }: ExportOptions): Promise<ExportProgress[]> {
-    const progress: ExportProgress[] = [];
-    
-    await mkdir(output, { recursive: true });
-
+  private async fetchDatabase(id: string): Promise<QueryDatabaseResponse> {
     const response = await this.notion.databases.query({
-      database_id: database
+      database_id: id
     });
+    return response;
+  }
 
-    progress.push({ 
-      type: 'start',
-      totalPages: response.results.length 
+  private async fetchPage(id: string): Promise<PageWithBlocks> {
+    const page = await this.notion.pages.retrieve({
+      page_id: id
     });
+    const blocks = await this.notion.blocks.children.list({
+      block_id: id
+    });
+    return { page, blocks } as PageWithBlocks;
+  }
 
-    const pages: ProcessedPage[] = [];
-
-    for (const [index, page] of response.results.entries()) {
+  public async exportJSON({ id, rawJSON }: JSONExportOption): Promise<string> {
+    try {
+      // Try as database first
       try {
-        const exportedPage = await this.processPage(page as PageObjectResponse, index);
-        pages.push(exportedPage);
-
-        const outputPath = join(output, 'notion-tools.json');
-        await writeFile(outputPath, JSON.stringify({ pages }, null, 2), 'utf8');
-        
-        progress.push({
-          type: 'page',
-          currentPage: index + 1,
-          totalPages: response.results.length,
-          pageId: page.id,
-          outputPath
-        });
-
+        const data = await this.fetchDatabase(id);
+        if (rawJSON) return JSON.stringify(data, null, 2)
+        return JSON.stringify(databaseTransformer(data), null, 2)
+        // TODO: flattenProps if needed
       } catch (error) {
-        progress.push({
-          type: 'page',
-          currentPage: index + 1,
-          totalPages: response.results.length,
-          pageId: page.id,
-          error: error instanceof Error ? error.message : String(error)
-        });
+        // If database fetch fails, try as page
+        const notionError = error as NotionError;
+        if (notionError?.code === 'object_not_found' || notionError?.status === 404) {
+          const data = await this.fetchPage(id);
+          if (rawJSON) return JSON.stringify(data, null, 2)
+          return JSON.stringify(pageTransformer(data), null, 2)
+        }
+        throw error;
       }
+    } catch (error) {
+      throw new Error(`Failed to fetch Notion content: ${error instanceof Error ? error.message : String(error)}`);
     }
-
-    progress.push({ type: 'complete' });
-    return progress;
   }
 }

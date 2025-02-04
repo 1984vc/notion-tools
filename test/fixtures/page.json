@@ -1,0 +1,967 @@
+{
+  "page": {
+    "object": "page",
+    "id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1",
+    "created_time": "2024-08-02T22:15:00.000Z",
+    "last_edited_time": "2025-01-13T20:42:00.000Z",
+    "created_by": {
+      "object": "user",
+      "id": "e81a9c32-5ed4-4743-aca4-0e8a22c007f2"
+    },
+    "last_edited_by": {
+      "object": "user",
+      "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+    },
+    "cover": null,
+    "icon": null,
+    "parent": {
+      "type": "database_id",
+      "database_id": "15982923-1d09-8087-b96f-d112a91c7430"
+    },
+    "archived": false,
+    "in_trash": false,
+    "properties": {
+      "draft": {
+        "id": "Q%7B%5BA",
+        "type": "checkbox",
+        "checkbox": false
+      },
+      "author": {
+        "id": "lTZn",
+        "type": "people",
+        "people": [
+          {
+            "object": "user",
+            "id": "e81a9c32-5ed4-4743-aca4-0e8a22c007f2"
+          }
+        ]
+      },
+      "description": {
+        "id": "ugYB",
+        "type": "rich_text",
+        "rich_text": []
+      },
+      "Name": {
+        "id": "title",
+        "type": "title",
+        "title": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Raising your Series A",
+              "link": null
+            },
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            },
+            "plain_text": "Raising your Series A",
+            "href": null
+          }
+        ]
+      },
+      "path": {
+        "id": "23033fce-0493-428d-bde4-aceebd882f34",
+        "type": "rich_text",
+        "rich_text": [
+          {
+            "type": "text",
+            "text": {
+              "content": "/docs/founders-handbook/raising-your-series-a",
+              "link": null
+            },
+            "annotations": {
+              "bold": false,
+              "italic": false,
+              "strikethrough": false,
+              "underline": false,
+              "code": false,
+              "color": "default"
+            },
+            "plain_text": "/docs/founders-handbook/raising-your-series-a",
+            "href": null
+          }
+        ]
+      },
+      "weight": {
+        "id": "fa02ccb2-71ba-4f4f-9c47-a19071e20880",
+        "type": "number",
+        "number": 6
+      }
+    },
+    "url": "https://www.notion.so/Raising-your-Series-A-306e9f6fab6b4ebf9bd1c2520d4d12d1",
+    "public_url": null,
+    "request_id": "a41387f5-4250-4d41-90df-e7926d046e93"
+  },
+  "blocks": {
+    "object": "list",
+    "results": [
+      {
+        "object": "block",
+        "id": "17682923-1d09-80b4-9990-ea7cbaa62136",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Now let’s take a deeper dive into the mechanics of raising a subsequent round. By this point, seed investors have bought 20% of the company. Several employees have joined and were granted a total of say 7% leaving 3% remaining option pool.",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Now let’s take a deeper dive into the mechanics of raising a subsequent round. By this point, seed investors have bought 20% of the company. Several employees have joined and were granted a total of say 7% leaving 3% remaining option pool.",
+              "href": null
+            }
+          ],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-80a7-97de-d8561b0ab0d2",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Given we have covered SAFE conversion  already, in this example we assume the seed round was a priced one to simplify the calculations and emphasize the points on option pool and prorate. But the effect is the same.",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Given we have covered SAFE conversion  already, in this example we assume the seed round was a priced one to simplify the calculations and emphasize the points on option pool and prorate. But the effect is the same.",
+              "href": null
+            }
+          ],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-802c-b71c-da9513d5c819",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Our starting cap table now looks like the following:",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Our starting cap table now looks like the following:",
+              "href": null
+            }
+          ],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-808c-80b9-efce34476aaa",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": true,
+        "archived": false,
+        "in_trash": false,
+        "type": "table",
+        "table": {
+          "table_width": 3,
+          "has_column_header": false,
+          "has_row_header": false
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-809a-bb80-da6a51b25283",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Next, the founders agree with the Series A lead on an $8M investment at a $40M post money valuation. The new investor will buy enough new shares to own 20% of the cap table which translates to 714,286 shares (PPS is 32,000,000 / 2,857,142 = $11.2) and the investment would only dilute each shareholder by 20% (8/40). So founders ownership would go from 35% to 28% (0.8*35), etc. And the cap table would look as following:",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Next, the founders agree with the Series A lead on an $8M investment at a $40M post money valuation. The new investor will buy enough new shares to own 20% of the cap table which translates to 714,286 shares (PPS is 32,000,000 / 2,857,142 = $11.2) and the investment would only dilute each shareholder by 20% (8/40). So founders ownership would go from 35% to 28% (0.8*35), etc. And the cap table would look as following:",
+              "href": null
+            }
+          ],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-8080-8cca-ed6d9c5beb2c",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": true,
+        "archived": false,
+        "in_trash": false,
+        "type": "table",
+        "table": {
+          "table_width": 6,
+          "has_column_header": false,
+          "has_row_header": false
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-8078-a6bb-e3c69404a5ec",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-10T15:37:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Link to Captable",
+                "link": {
+                  "url": "https://1984.vc/docs/cap-table-worksheet/#AAN4IgTg9g7gIghgFziAXAbVASwCapABhABoQEBPABwFM8BjCAWwYgDtiQW4GaUQAxCAFcW2KmAAEARnYBnABZwwVGakn51GktBZj5mCqgwh5i5ao2aQ1MLSosEqgKwA6AMwAOACwA2SY48.fh6OAL5EoCZKKihqFvgk1rb2qpLOAEyOnp6uAOzu3gCc7mlpnu45YREKUeZxCWJJDijuzjk5kvmOBV0lfhkhALokcAA2I9AwVCNUCDwIYIJUlSA4eNIk5NR0jMxsJJzceALCohJpstVmMXHxINq6cvqGVabRsRb1NnZNrq5uvwDAYDlpEru9LIlvqhSm4vL5_HCgu4QZc3jdPo1VAVnO5ioU0pJJN5HJIMjlvINhmMJlMZnMFktwitcLwAJIyGSLbAAeQoCEwrBUG0oPBA9CYrHYB1F7M5VGw4l5_MFF1eqFu9zAegM6BeNRQt0hyQNKLVBoxUJNTNB0UNDUt.EpIFG41gtNmqHmi2Wq14OXYm1FMjEmDM.y4ooAyiHlOIAILiVksABuygQEDA7EwKbT3GN7nRdygOi1jx1RhtqByBQ6rm8FuNkmxBRbRTbhXwaQKPidLpp0w9KAAZqNgz6WSACgGRdsJXsOBG8NyEHIxOIAKIMCjjMhUMPGVHQupFkva54Hs1pY9GpredKha2HlBXj5We3GzzORw5AlIwIIh89SuF8IXfH5WjSAt8E8NoOkCfBkSGZ1qTdAd6W9JlfRANRpy2XhxV2KVF14aN5UTHMZHTTMSErFBv0kTxIK0YsHieXUL31ejGPcBsmibZxWyKLpBMcZFHzNLimLfL5G0_bxXHwHJRLbEpyRbU1OPabjePMZx5MKTxJDaTx8G8HJ8AKXsUMmNDPQZJ0KCUABZVgqDIVBXBAywkDAABzGYlQFFgZAABQgCARnVEhhEEYMeT5ILoncLiQiAA"
+                }
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Link to Captable",
+              "href": "https://1984.vc/docs/cap-table-worksheet/#AAN4IgTg9g7gIghgFziAXAbVASwCapABhABoQEBPABwFM8BjCAWwYgDtiQW4GaUQAxCAFcW2KmAAEARnYBnABZwwVGakn51GktBZj5mCqgwh5i5ao2aQ1MLSosEqgKwA6AMwAOACwA2SY48.fh6OAL5EoCZKKihqFvgk1rb2qpLOAEyOnp6uAOzu3gCc7mlpnu45YREKUeZxCWJJDijuzjk5kvmOBV0lfhkhALokcAA2I9AwVCNUCDwIYIJUlSA4eNIk5NR0jMxsJJzceALCohJpstVmMXHxINq6cvqGVabRsRb1NnZNrq5uvwDAYDlpEru9LIlvqhSm4vL5_HCgu4QZc3jdPo1VAVnO5ioU0pJJN5HJIMjlvINhmMJlMZnMFktwitcLwAJIyGSLbAAeQoCEwrBUG0oPBA9CYrHYB1F7M5VGw4l5_MFF1eqFu9zAegM6BeNRQt0hyQNKLVBoxUJNTNB0UNDUt.EpIFG41gtNmqHmi2Wq14OXYm1FMjEmDM.y4ooAyiHlOIAILiVksABuygQEDA7EwKbT3GN7nRdygOi1jx1RhtqByBQ6rm8FuNkmxBRbRTbhXwaQKPidLpp0w9KAAZqNgz6WSACgGRdsJXsOBG8NyEHIxOIAKIMCjjMhUMPGVHQupFkva54Hs1pY9GpredKha2HlBXj5We3GzzORw5AlIwIIh89SuF8IXfH5WjSAt8E8NoOkCfBkSGZ1qTdAd6W9JlfRANRpy2XhxV2KVF14aN5UTHMZHTTMSErFBv0kTxIK0YsHieXUL31ejGPcBsmibZxWyKLpBMcZFHzNLimLfL5G0_bxXHwHJRLbEpyRbU1OPabjePMZx5MKTxJDaTx8G8HJ8AKXsUMmNDPQZJ0KCUABZVgqDIVBXBAywkDAABzGYlQFFgZAABQgCARnVEhhEEYMeT5ILoncLiQiAA"
+            }
+          ],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-8040-81e8-cd5f5e3f661f",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "However, there are two problems with this cap table.  First, the option pool has now been diluted down to 2.4%, barely enough for the number of new hires needed as part of this cash infusion. Additionally, the existing investors have also been diluted down to 16% but they often have pro-rata rights in the subsequent round. Addressing both problems will increase the dilution to the founders further.",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "However, there are two problems with this cap table.  First, the option pool has now been diluted down to 2.4%, barely enough for the number of new hires needed as part of this cash infusion. Additionally, the existing investors have also been diluted down to 16% but they often have pro-rata rights in the subsequent round. Addressing both problems will increase the dilution to the founders further.",
+              "href": null
+            }
+          ],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-80a7-b35d-ec25effce619",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "heading_2",
+        "heading_2": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Refreshing the option pool",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Refreshing the option pool",
+              "href": null
+            }
+          ],
+          "is_toggleable": false,
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-80a6-a8ca-f4be1d5c44d1",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Let’s start with the option pool. In order to create another 10% option pool, which is very common in a Series A, the company will need to reserve enough shares such that the option pool after getting diluted by the Series A investor will be 10%.  In this case the number is 354,286 new shares.",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Let’s start with the option pool. In order to create another 10% option pool, which is very common in a Series A, the company will need to reserve enough shares such that the option pool after getting diluted by the Series A investor will be 10%.  In this case the number is 354,286 new shares.",
+              "href": null
+            }
+          ],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-8080-9374-cf36ab191c19",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": true,
+        "archived": false,
+        "in_trash": false,
+        "type": "table",
+        "table": {
+          "table_width": 7,
+          "has_column_header": false,
+          "has_row_header": false
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-8099-98be-d1f7a1ca40e9",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-10T15:37:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Link to Captable",
+                "link": {
+                  "url": "https://1984.vc/docs/cap-table-worksheet/#AAN4IgTg9g7gIghgFziAXAbVASwCapABhABoQEBPABwFM8BjCAWwYgDtiQW4GaUQAxCAFcW2KmAAEARnYBnABZwwVGakn51GktBZj5mCqgwh5i5ao2aQ1MLSosEqgKwA6AMwAOACwA2SY48.fh6OAL5EoCZKKihqFvgk1rb2qpLOAEyOnp6uAOzu3gCc7mlpnu45YREKUeZxCWJJDijuzjk5kvmOBV0lfhkhALokcAA2I9AwVCNUCDwIYIJUlSA4eNIk5NR0jMxsJJzceALCohJpstVmMXHxINq6cvqGVabRsRb1NnZNrq5uvwDAYDlpEru9LIlvqhSm4vL5_HCgu4QZc3jdPo1VAVnO5ioU0pJJN5HJIMjlvINhmMJlMZnMFktwitcLwAJIyGSLbAAeQoCEwrBUG0oPBA9CYrHYB1F7M5VGw4l5_MFF1eqFu9zAegM6BeNRQt0hyQNKLVBoxUJNTNB0UNDUt.EpIFG41gtNmqHmi2Wq14OXYm1FMjEmDM.y4ooAyiHlOIAILiVksABuygQEDA7EwKbT3GN7nRdygOi1jx1RhtqByBQ6rm8FuNkmxBRbRTbhXwaQKPidLpp0w9KAAZqNgz6WSACgGRdsJXsOBG8NyEHIxOIAKIMCjjMhUMPGVHQupFkva54Hs1pY9GpredKha2HlBXj5We3GzzORw5AlIwIIh89SuF8IXfH5WjSAt8E8NoOkCfBkSGZ1qTdAd6W9JlfRANRpy2XhxV2KVF14aN5UTHMZHTTMSErFBv0kTxIK0YsHieXUL31ejGPcBsmibZxWyKLpBMcZFHzNLimLfL5G0_bxXHwHJRLbEpyRbU1OPabjePMZx5MKTxJDaTx8G8HJ8AKXsUMmNDPQZJ0KCUABZVgqDIVBXBAywkDAABzGYlQFFgZAABQgCARnMEhhEEYMeT5ILoncLiQiAA"
+                }
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Link to Captable",
+              "href": "https://1984.vc/docs/cap-table-worksheet/#AAN4IgTg9g7gIghgFziAXAbVASwCapABhABoQEBPABwFM8BjCAWwYgDtiQW4GaUQAxCAFcW2KmAAEARnYBnABZwwVGakn51GktBZj5mCqgwh5i5ao2aQ1MLSosEqgKwA6AMwAOACwA2SY48.fh6OAL5EoCZKKihqFvgk1rb2qpLOAEyOnp6uAOzu3gCc7mlpnu45YREKUeZxCWJJDijuzjk5kvmOBV0lfhkhALokcAA2I9AwVCNUCDwIYIJUlSA4eNIk5NR0jMxsJJzceALCohJpstVmMXHxINq6cvqGVabRsRb1NnZNrq5uvwDAYDlpEru9LIlvqhSm4vL5_HCgu4QZc3jdPo1VAVnO5ioU0pJJN5HJIMjlvINhmMJlMZnMFktwitcLwAJIyGSLbAAeQoCEwrBUG0oPBA9CYrHYB1F7M5VGw4l5_MFF1eqFu9zAegM6BeNRQt0hyQNKLVBoxUJNTNB0UNDUt.EpIFG41gtNmqHmi2Wq14OXYm1FMjEmDM.y4ooAyiHlOIAILiVksABuygQEDA7EwKbT3GN7nRdygOi1jx1RhtqByBQ6rm8FuNkmxBRbRTbhXwaQKPidLpp0w9KAAZqNgz6WSACgGRdsJXsOBG8NyEHIxOIAKIMCjjMhUMPGVHQupFkva54Hs1pY9GpredKha2HlBXj5We3GzzORw5AlIwIIh89SuF8IXfH5WjSAt8E8NoOkCfBkSGZ1qTdAd6W9JlfRANRpy2XhxV2KVF14aN5UTHMZHTTMSErFBv0kTxIK0YsHieXUL31ejGPcBsmibZxWyKLpBMcZFHzNLimLfL5G0_bxXHwHJRLbEpyRbU1OPabjePMZx5MKTxJDaTx8G8HJ8AKXsUMmNDPQZJ0KCUABZVgqDIVBXBAywkDAABzGYlQFFgZAABQgCARnMEhhEEYMeT5ILoncLiQiAA"
+            }
+          ],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-806f-9221-c49ce1d1ad8f",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:40:00.000Z",
+        "last_edited_time": "2025-01-09T17:40:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-800d-b24c-e83afeb86f2e",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "But in order to maintain the Series A investor’s target ownership of 20%, the number of Series A shares now have to go up from 714,286 shares to 791,837 (the dollar invested will be the same but the price per share will go down to $10.10), and the resulting cap table will end up with 1,146,123 new shares or a total dilution of ",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "But in order to maintain the Series A investor’s target ownership of 20%, the number of Series A shares now have to go up from 714,286 shares to 791,837 (the dollar invested will be the same but the price per share will go down to $10.10), and the resulting cap table will end up with 1,146,123 new shares or a total dilution of ",
+              "href": null
+            },
+            {
+              "type": "text",
+              "text": {
+                "content": "1,146,123",
+                "link": null
+              },
+              "annotations": {
+                "bold": true,
+                "italic": true,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "1,146,123",
+              "href": null
+            },
+            {
+              "type": "text",
+              "text": {
+                "content": "/",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "/",
+              "href": null
+            },
+            {
+              "type": "text",
+              "text": {
+                "content": "3,959,183 ~ 29%",
+                "link": null
+              },
+              "annotations": {
+                "bold": true,
+                "italic": true,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "3,959,183 ~ 29%",
+              "href": null
+            }
+          ],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17782923-1d09-80ec-928b-f52d8b14c209",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-10T22:21:00.000Z",
+        "last_edited_time": "2025-01-10T22:22:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "e81a9c32-5ed4-4743-aca4-0e8a22c007f2"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "e81a9c32-5ed4-4743-aca4-0e8a22c007f2"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "callout",
+        "callout": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "For those interested in dilution math, Shouldn’t the final dilution just be 20% for the new investor + 7% option pool expansion = 27%? the reason the number is 29% and not 27% is that these new shares must dilute the existing shareholder, and not dilute the Series A investor or the available option pool so they maintain their 20% and 10% respectively.  In other words, existing shareholders are taking on more of the dilution.",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "For those interested in dilution math, Shouldn’t the final dilution just be 20% for the new investor + 7% option pool expansion = 27%? the reason the number is 29% and not 27% is that these new shares must dilute the existing shareholder, and not dilute the Series A investor or the available option pool so they maintain their 20% and 10% respectively.  In other words, existing shareholders are taking on more of the dilution.",
+              "href": null
+            }
+          ],
+          "icon": {
+            "type": "emoji",
+            "emoji": "📢"
+          },
+          "color": "gray_background"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-8072-83d7-c4848da528bd",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "heading_2",
+        "heading_2": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Dealing with pro rata",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Dealing with pro rata",
+              "href": null
+            }
+          ],
+          "is_toggleable": false,
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-8058-bb4f-e25058412145",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Now if the seed investors also decides to maintain their 20% ownership, they will need to participate in the round.  The company now must issue additional shares to seed investors, the series A investor and allocate more options in the option pool. To address all these needs, the company will end up issuing a total of 1,542,858 new shares resulting in a cap table with 4,400,400 shares.  Seed and A investors will both end up at 20%.  But the founders will get hit by a whopping 35% dilution (1,542,858/4,400,400)",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Now if the seed investors also decides to maintain their 20% ownership, they will need to participate in the round.  The company now must issue additional shares to seed investors, the series A investor and allocate more options in the option pool. To address all these needs, the company will end up issuing a total of 1,542,858 new shares resulting in a cap table with 4,400,400 shares.  Seed and A investors will both end up at 20%.  But the founders will get hit by a whopping 35% dilution (1,542,858/4,400,400)",
+              "href": null
+            }
+          ],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-80b0-bad4-fe2c6f40aa63",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": true,
+        "archived": false,
+        "in_trash": false,
+        "type": "table",
+        "table": {
+          "table_width": 7,
+          "has_column_header": false,
+          "has_row_header": false
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-8031-82f7-c4d9b4c30c99",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-09T17:39:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "It is not uncommon for founders to get hit with 25-30% total dilution in a Series A round. But fortunately there are strategies a founder can follow to limit the dilution",
+                "link": null
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "It is not uncommon for founders to get hit with 25-30% total dilution in a Series A round. But fortunately there are strategies a founder can follow to limit the dilution",
+              "href": null
+            }
+          ],
+          "color": "default"
+        }
+      },
+      {
+        "object": "block",
+        "id": "17682923-1d09-8077-ad8d-cbc25de4aec6",
+        "parent": {
+          "type": "page_id",
+          "page_id": "306e9f6f-ab6b-4ebf-9bd1-c2520d4d12d1"
+        },
+        "created_time": "2025-01-09T17:39:00.000Z",
+        "last_edited_time": "2025-01-10T15:37:00.000Z",
+        "created_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "last_edited_by": {
+          "object": "user",
+          "id": "cdef0605-eaff-416b-b254-8ed554e34d62"
+        },
+        "has_children": false,
+        "archived": false,
+        "in_trash": false,
+        "type": "paragraph",
+        "paragraph": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Suggested reading: Minimizing Founder Dilution",
+                "link": {
+                  "url": "https://1984.vc/docs/founders-handbook/minimizing-founder-dilution/"
+                }
+              },
+              "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+              },
+              "plain_text": "Suggested reading: Minimizing Founder Dilution",
+              "href": "https://1984.vc/docs/founders-handbook/minimizing-founder-dilution/"
+            }
+          ],
+          "color": "default"
+        }
+      }
+    ],
+    "next_cursor": null,
+    "has_more": false,
+    "type": "block",
+    "block": {},
+    "request_id": "3040c12f-4c03-4cae-9c75-4cc66c1897fb"
+  }
+}

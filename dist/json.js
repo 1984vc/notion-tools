@@ -1,69 +1,49 @@
-import { Client, isFullPage } from '@notionhq/client';
-import { mkdir, writeFile } from 'fs/promises';
-import { join } from 'path';
-export class NotionJsonExporter {
+import { Client } from '@notionhq/client';
+import { databaseTransformer, pageTransformer } from './transformers.js';
+export class NotionJSONExporter {
     constructor(notionToken) {
         this.notion = new Client({ auth: notionToken });
     }
-    async getPageTitle(pageInfo) {
-        const properties = pageInfo.properties;
-        const titleProp = Object.values(properties).find((prop) => prop.type === 'title');
-        return titleProp?.title?.[0]?.plain_text || 'untitled';
-    }
-    async processPage(page, index) {
-        const pageInfo = await this.notion.pages.retrieve({ page_id: page.id });
-        if (!isFullPage(pageInfo)) {
-            throw new Error('Retrieved incomplete page object');
-        }
-        const title = await this.getPageTitle(pageInfo);
-        const blocks = await this.notion.blocks.children.list({ block_id: page.id });
-        return {
-            id: page.id,
-            title,
-            created_time: pageInfo.created_time,
-            last_edited_time: pageInfo.last_edited_time,
-            weight: index,
-            properties: pageInfo.properties,
-            blocks: blocks.results
-        };
-    }
-    async exportDatabase({ database, output }) {
-        const progress = [];
-        await mkdir(output, { recursive: true });
+    async fetchDatabase(id) {
         const response = await this.notion.databases.query({
-            database_id: database
+            database_id: id
         });
-        progress.push({
-            type: 'start',
-            totalPages: response.results.length
+        return response;
+    }
+    async fetchPage(id) {
+        const page = await this.notion.pages.retrieve({
+            page_id: id
         });
-        const pages = [];
-        for (const [index, page] of response.results.entries()) {
+        const blocks = await this.notion.blocks.children.list({
+            block_id: id
+        });
+        return { page, blocks };
+    }
+    async exportJSON({ id, rawJSON }) {
+        try {
+            // Try as database first
             try {
-                const exportedPage = await this.processPage(page, index);
-                pages.push(exportedPage);
-                const outputPath = join(output, 'notion-tools.json');
-                await writeFile(outputPath, JSON.stringify({ pages }, null, 2), 'utf8');
-                progress.push({
-                    type: 'page',
-                    currentPage: index + 1,
-                    totalPages: response.results.length,
-                    pageId: page.id,
-                    outputPath
-                });
+                const data = await this.fetchDatabase(id);
+                if (rawJSON)
+                    return JSON.stringify(data, null, 2);
+                return JSON.stringify(databaseTransformer(data), null, 2);
+                // TODO: flattenProps if needed
             }
             catch (error) {
-                progress.push({
-                    type: 'page',
-                    currentPage: index + 1,
-                    totalPages: response.results.length,
-                    pageId: page.id,
-                    error: error instanceof Error ? error.message : String(error)
-                });
+                // If database fetch fails, try as page
+                const notionError = error;
+                if (notionError?.code === 'object_not_found' || notionError?.status === 404) {
+                    const data = await this.fetchPage(id);
+                    if (rawJSON)
+                        return JSON.stringify(data, null, 2);
+                    return JSON.stringify(pageTransformer(data), null, 2);
+                }
+                throw error;
             }
         }
-        progress.push({ type: 'complete' });
-        return progress;
+        catch (error) {
+            throw new Error(`Failed to fetch Notion content: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
 }
 //# sourceMappingURL=json.js.map

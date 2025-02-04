@@ -3,13 +3,18 @@ import { NotionToMarkdown } from 'notion-to-md';
 import { mkdir, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { MetaGenerator } from './meta.js';
+import { urlTransform } from './transformers.js';
 export class NotionMarkdownExporter {
-    constructor(notionToken, basePath, transformers) {
+    constructor(notionToken, baseUrl, transformers) {
         this.notion = new Client({ auth: notionToken });
         this.n2m = new NotionToMarkdown({ notionClient: this.notion });
         this.pagePathCache = new Map();
         this.metaGenerator = new MetaGenerator();
-        this.basePath = basePath || '';
+        this.baseUrl = baseUrl || '';
+        // Apply URL transformer if baseUrl is provided
+        if (this.baseUrl) {
+            urlTransform(this.n2m, this.baseUrl);
+        }
         if (transformers) {
             transformers(this.n2m);
         }
@@ -66,25 +71,10 @@ export class NotionMarkdownExporter {
             return null;
         }
     }
-    async transformDatabaseLinks(markdown) {
-        const linkRegex = /\[([^\]]+)\]\(\/([a-f0-9-]{32,36})\)/g;
-        let transformedMarkdown = markdown;
-        for (const match of transformedMarkdown.matchAll(linkRegex)) {
-            const [fullMatch, linkText, pageId] = match;
-            const pagePath = await this.getPagePath(pageId);
-            if (pagePath) {
-                const prefix = this.basePath ? `/${this.basePath}` : '';
-                const newLink = `[${linkText}](${prefix}/${pagePath})`;
-                transformedMarkdown = transformedMarkdown.replace(fullMatch, newLink);
-            }
-        }
-        return transformedMarkdown;
-    }
     async convertPageToMarkdown(pageId) {
         const mdblocks = await this.n2m.pageToMarkdown(pageId);
         const { parent: markdown } = this.n2m.toMarkdownString(mdblocks);
-        const transformedMarkdown = await this.transformDatabaseLinks(markdown);
-        return this.normalizeQuotes(transformedMarkdown);
+        return this.normalizeQuotes(markdown ?? "");
     }
     async processPage(page, baseOutputDir, options) {
         const pageInfo = await this.notion.pages.retrieve({ page_id: page.id });
@@ -126,7 +116,6 @@ export class NotionMarkdownExporter {
         await writeFile(jsonPath, JSON.stringify({ pages }, null, 2), 'utf8');
     }
     async *exportDatabase(options) {
-        this.basePath = options.basePath || '';
         await mkdir(options.output, { recursive: true });
         const response = await this.notion.databases.query({
             database_id: options.database
@@ -156,7 +145,6 @@ export class NotionMarkdownExporter {
                     // Add all page properties
                     const properties = page.properties;
                     for (const [key, prop] of Object.entries(properties)) {
-                        console.log(key, prop);
                         switch (prop.type) {
                             case 'title':
                                 frontmatter[key] = prop.title?.[0]?.plain_text || '';

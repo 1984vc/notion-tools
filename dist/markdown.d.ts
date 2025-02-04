@@ -4,7 +4,6 @@ interface ExportOptions {
     output: string;
     notionToken: string;
     includeJson?: boolean;
-    basePath?: string;
     noFrontmatter?: boolean;
     extension?: string;
     skipMeta?: boolean;
@@ -25,14 +24,13 @@ export declare class NotionMarkdownExporter {
     private n2m;
     private pagePathCache;
     private metaGenerator;
-    private basePath;
-    constructor(notionToken: string, basePath?: string, transformers?: (n2m: NotionToMarkdown) => void);
+    private baseUrl;
+    constructor(notionToken: string, baseUrl?: string, transformers?: (n2m: NotionToMarkdown) => void);
     setCustomTransformer(type: string, transformer: CustomTransformer): void;
     private normalizeQuotes;
     private getPageTitle;
     private getOutputPath;
     private getPagePath;
-    private transformDatabaseLinks;
     private convertPageToMarkdown;
     private processPage;
     private exportDatabaseJson;

@@ -204,3 +204,67 @@ The CLI will:
 ## License
 
 MIT
+
+## CLI Instructions
+
+### Export Formats
+
+#### Nextra (MDX)
+```bash
+notion-tools export nextra --id <database_id> -o <output_path> [options]
+```
+
+#### Hextra (Markdown)
+```bash
+notion-tools export hextra --id <database_id> -o <output_path> [options]
+```
+
+Options for both formats:
+- `--id`: Required. The Notion database ID
+- `-o, --output`: Required. The output directory path
+- `--include-json`: Optional. Include raw JSON export in output directory
+- `--base-path`: Optional. Base path for internal links (e.g., /docs)
+- `--no-frontmatter`: Optional. Exclude frontmatter from files
+
+Example:
+```bash
+notion-tools export nextra --id "123456789abcdef" -o "./content/posts" --base-path "/docs"
+```
+
+### Export to JSON
+
+```bash
+notion-tools json --id <database_id> -o <output_path>
+```
+
+Options:
+- `--id`: Required. The Notion database ID
+- `-o, --output`: Required. The output directory path for JSON file
+
+Example:
+```bash
+notion-tools json --id "123456789abcdef" -o "./content/data"
+```
+
+### Export Raw JSON
+
+```bash
+notion-tools raw-json --id <id> [-o <output_path>]
+```
+
+Options:
+- `--id`: Required. The Notion database or page ID
+- `-o, --output`: Optional. Output file path (defaults to stdout)
+
+Example:
+```bash
+notion-tools raw-json --id "123456789abcdef" -o "./data/raw.json"
+```
+
+### Finding Your Database ID
+
+The database ID is the part of your Notion database URL after the workspace name and before the question mark:
+```
+https://www.notion.so/workspace-name/123456789abcdef?v=...
+                                   ^^^^^^^^^^^^^^
+                                   This is your database ID
