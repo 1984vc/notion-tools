@@ -43,6 +43,8 @@ interface ExportOptions {
   noFrontmatter?: boolean;
   path: string;
   simplify?: boolean;
+  assetsPath?: string;
+  assetsPathBase?: string;
 }
 
   const exportCommand = program.command('export')
@@ -60,10 +62,9 @@ exportCommand
       requireNotionToken();
 
       try {
-        const exporter = new NotionMarkdownExporter(
-          NOTION_TOKEN,
-          undefined
-        );
+        const exporter = new NotionMarkdownExporter({
+          notionToken: NOTION_TOKEN
+        });
         
         // Create async iterator for progress updates
         const progressIterator = exporter.exportDatabase({
@@ -113,17 +114,20 @@ exportCommand
   .requiredOption('-o, --output <path>', 'Output directory path')
   .option('--include-json', 'Include raw JSON export in output directory')
   .option('--base-url <path>', 'Base path for internal links (e.g., /docs)')
+  .option('--assets-path <path>', 'Base path for images and files (e.g., /assets/notion_images)', '/assets')
+  .option('--assets-path-base <path>', 'Base path for internal images and file links (e.g., /notion_images)', '/')
   .option('--no-frontmatter', 'Exclude frontmatter from Markdown files')
   .action(async (options: ExportOptions) => {
       requireNotionToken();
 
       try {
-        const exporter = new NotionMarkdownExporter(
-          NOTION_TOKEN,
-          options.baseUrl,
-          options.output + '/assets',
-          hextraTransform
-        );
+        const exporter = new NotionMarkdownExporter({
+          notionToken: NOTION_TOKEN,
+          baseUrl: options.baseUrl,
+          assetsPath: options.assetsPath,
+          assetsBasePath: options.assetsPathBase,
+          transformers: hextraTransform
+        });
         
         // Create async iterator for progress updates
         const progressIterator = exporter.exportDatabase({

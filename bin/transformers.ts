@@ -1,4 +1,5 @@
 import fs from 'fs';
+import crypto from 'crypto';
 import path from 'path';
 import { QueryDatabaseResponse } from '@notionhq/client/build/src/api-endpoints.js';
 import { NotionToMarkdown } from 'notion-to-md';
@@ -35,11 +36,11 @@ export function urlTransform(n2m: NotionToMarkdown, baseUrl?: string): void {
 export function hextraTransform(n2m: NotionToMarkdown): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   n2m.setCustomTransformer('callout', async (block: any) => {
-    // Get the callout icon (emoji or external icon)
+    // get the callout icon (emoji or external icon)
     const icon = block.callout.icon?.emoji || '📄';
     
-    // Map Notion colors to Hextra callout types
-    const colorTypeMap: Record<string, string> = {
+    // map notion colors to hextra callout types
+    const colortypemap: Record<string, string> = {
       red: 'error',
       red_background: 'error',
       orange: 'warning',
@@ -60,17 +61,15 @@ export function hextraTransform(n2m: NotionToMarkdown): void {
       gray: 'info',
       gray_background: 'info'
     };
-    
-    const calloutType = colorTypeMap[block.callout.color] || 'info';
-    
-    // Convert the rich text content to markdown
-    const content = block.callout.rich_text
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((text: any) => text.plain_text)
-      .join('');
+
+    const calloutType = colortypemap[block.callout.color] || 'info';
     
     // Format for Hextra's Callout component
-    return `{{< callout type="${calloutType}" emoji="${icon}" >}}\n${content}\n{{< /callout >}}`;
+    const fakeParagraph = { ...block };
+    fakeParagraph.type = 'paragraph';
+    fakeParagraph.paragraph = { ...block.callout } 
+    const mdBlocks = await n2m.blockToMarkdown(fakeParagraph);
+    return `{{< callout type="${calloutType}" emoji="${icon}" >}}\n${mdBlocks}\n{{< /callout >}}`;
   });
 }
 
@@ -146,24 +145,29 @@ export const flattenProperties = (properties: Record<string, unknown>): Record<s
   return simplifiedProperties;
 }
 
-export function imageTransform(n2m: NotionToMarkdown, assetsDir: string = 'assets'): void {
+export function imageTransform(n2m: NotionToMarkdown, assetsDirPath: string = 'assets', assetsDirBasePath: string = ''): void {
   // Ensure the assets directory exists
-  if (!fs.existsSync(assetsDir)) {
-    fs.mkdirSync(assetsDir, { recursive: true });
+  if (!fs.existsSync(assetsDirPath)) {
+    fs.mkdirSync(assetsDirPath, { recursive: true });
   }
   n2m.setCustomTransformer('image', async (block: any) => {
     if (!block.image) return block;
     if (block.image.external?.url && !block.image.file) return block;
     const url = block.image.external?.url || block.image.file?.url;
     if (!url) return block;
-    const fileName = path.basename(new URL(url).pathname);
-    const localFilePath = path.join(assetsDir, fileName);
-    console.log(`Downloading ${url} to ${localFilePath}`);
+    const originalName = path.basename(new URL(url).pathname);
+    const ext = path.extname(originalName);
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const fileBuffer = Buffer.from(arrayBuffer);
+    const hash = crypto.createHash('sha1').update(fileBuffer).digest('hex');
+    const fileName = hash + ext;
+    const localFilePath = path.join(assetsDirPath, fileName);
+    const linkFilePath = path.join(assetsDirBasePath, fileName);
+    console.log(`Saving image as ${localFilePath}`);
     if (!fs.existsSync(localFilePath)) {
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      fs.writeFileSync(localFilePath, Buffer.from(arrayBuffer));
+      fs.writeFileSync(localFilePath, fileBuffer);
     }
-    return `![${fileName}](${localFilePath})`;
+    return `![${fileName}](${linkFilePath}) ${block.image.caption ? `*${block.image.caption[0]?.plain_text}*` : ''}`;
   });
 }
