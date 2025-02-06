@@ -1,3 +1,6 @@
+import fs from 'fs';
+import crypto from 'crypto';
+import path from 'path';
 export function urlTransform(n2m, baseUrl) {
     if (!baseUrl)
         return;
@@ -7,6 +10,7 @@ export function urlTransform(n2m, baseUrl) {
         if (!block.paragraph?.rich_text)
             return block;
         // Transform URLs in rich_text array
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         block.paragraph.rich_text = block.paragraph.rich_text.map((text) => {
             if (!text.href || !text.href.startsWith(baseUrl))
                 return text;
@@ -25,10 +29,10 @@ export function urlTransform(n2m, baseUrl) {
 export function hextraTransform(n2m) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     n2m.setCustomTransformer('callout', async (block) => {
-        // Get the callout icon (emoji or external icon)
+        // get the callout icon (emoji or external icon)
         const icon = block.callout.icon?.emoji || '📄';
-        // Map Notion colors to Hextra callout types
-        const colorTypeMap = {
+        // map notion colors to hextra callout types
+        const colortypemap = {
             red: 'error',
             red_background: 'error',
             orange: 'warning',
@@ -49,16 +53,16 @@ export function hextraTransform(n2m) {
             gray: 'info',
             gray_background: 'info'
         };
-        const calloutType = colorTypeMap[block.callout.color] || 'info';
-        // Convert the rich text content to markdown
-        const content = block.callout.rich_text
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .map((text) => text.plain_text)
-            .join('');
+        const calloutType = colortypemap[block.callout.color] || 'info';
         // Format for Hextra's Callout component
-        return `{{< callout type="${calloutType}" emoji="${icon}" >}}\n${content}\n{{< /callout >}}`;
+        const fakeParagraph = { ...block };
+        fakeParagraph.type = 'paragraph';
+        fakeParagraph.paragraph = { ...block.callout };
+        const mdBlocks = await n2m.blockToMarkdown(fakeParagraph);
+        return `{{< callout type="${calloutType}" emoji="${icon}" >}}\n${mdBlocks}\n{{< /callout >}}`;
     });
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const pageTransformer = (pageResponse) => {
     const page = pageResponse.page;
     if ('properties' in page) {
@@ -71,6 +75,7 @@ export const pageTransformer = (pageResponse) => {
         };
     }
 };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const databaseTransformer = (response) => {
     return response.results.map((page) => {
         if ('properties' in page) {
@@ -82,6 +87,7 @@ export const databaseTransformer = (response) => {
         return page;
     });
 };
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const flattenProperties = (properties) => {
     const simplifiedProperties = {};
     for (const [key, value] of Object.entries(properties)) {
@@ -123,4 +129,33 @@ export const flattenProperties = (properties) => {
     }
     return simplifiedProperties;
 };
+export function imageTransform(n2m, assetsDirPath = 'assets', assetsDirBasePath = '') {
+    // Ensure the assets directory exists
+    if (!fs.existsSync(assetsDirPath)) {
+        fs.mkdirSync(assetsDirPath, { recursive: true });
+    }
+    n2m.setCustomTransformer('image', async (block) => {
+        if (!block.image)
+            return block;
+        if (block.image.external?.url && !block.image.file)
+            return block;
+        const url = block.image.external?.url || block.image.file?.url;
+        if (!url)
+            return block;
+        const originalName = path.basename(new URL(url).pathname);
+        const ext = path.extname(originalName);
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        const fileBuffer = Buffer.from(arrayBuffer);
+        const hash = crypto.createHash('sha1').update(fileBuffer).digest('hex');
+        const fileName = hash + ext;
+        const localFilePath = path.join(assetsDirPath, fileName);
+        const linkFilePath = path.join(assetsDirBasePath, fileName);
+        console.log(`Saving image as ${localFilePath}`);
+        if (!fs.existsSync(localFilePath)) {
+            fs.writeFileSync(localFilePath, fileBuffer);
+        }
+        return `![${fileName}](${linkFilePath}) ${block.image.caption ? `*${block.image.caption[0]?.plain_text}*` : ''}`;
+    });
+}
 //# sourceMappingURL=transformers.js.map

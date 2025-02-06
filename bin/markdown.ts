@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { PageObjectResponse} from '@notionhq/client/build/src/api-endpoints.js';
 import { MetaGenerator } from './meta.js';
-import { urlTransform } from './transformers.js';
+import { imageTransform, urlTransform } from './transformers.js';
 
 interface ExportOptions {
   database: string;
@@ -166,22 +166,31 @@ export class NotionMarkdownExporter {
   private n2m: NotionToMarkdown;
   private pagePathCache: Map<string, string>;
   private metaGenerator: MetaGenerator;
-  private baseUrl: string;
+  private baseUrl?: string;
+  private assetsPath?: string;
+  private assetsBasePath?: string;
 
-  constructor(notionToken: string, baseUrl?: string, transformers?: (n2m: NotionToMarkdown) => void) {
-    this.notion = new Client({ auth: notionToken });
-    this.n2m = new NotionToMarkdown({ notionClient: this.notion });
+  constructor(options: { notionToken: string; baseUrl?: string; assetsPath?: string; assetsBasePath?: string, transformers?: (n2m: NotionToMarkdown) => void; }) {
+    this.notion = new Client({ auth: options.notionToken });
+    this.n2m = new NotionToMarkdown({ notionClient: this.notion, config:{ separateChildPage: false }});
     this.pagePathCache = new Map();
     this.metaGenerator = new MetaGenerator();
-    this.baseUrl = baseUrl || '';
+    this.baseUrl = options.baseUrl;
+    this.assetsPath = options.assetsPath;
+    this.assetsBasePath = options.assetsBasePath;
     
     // Apply URL transformer if baseUrl is provided
     if (this.baseUrl) {
       urlTransform(this.n2m, this.baseUrl);
     }
 
-    if (transformers) {
-      transformers(this.n2m);
+    // Apply URL transformer if baseUrl is provided
+    if (this.assetsPath) {
+      imageTransform(this.n2m, this.assetsPath, this.assetsBasePath);
+    }
+
+    if (options.transformers) {
+      options.transformers(this.n2m);
     }
   }
 
@@ -218,37 +227,6 @@ export class NotionMarkdownExporter {
     const extension = options.extension || '.mdx';
     const filename = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}${extension}`;
     return join(baseOutputDir, filename);
-  }
-
-  private async getPagePath(pageId: string): Promise<string | null> {
-    try {
-      const cleanId = pageId.replace(/-/g, '');
-      const formattedId = cleanId.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
-      
-      if (this.pagePathCache.has(formattedId)) {
-        return this.pagePathCache.get(formattedId) || null;
-      }
-
-      const pageInfo = await this.notion.pages.retrieve({ page_id: formattedId });
-      if (!isFullPage(pageInfo)) {
-        return null;
-      }
-
-      const properties = pageInfo.properties as Record<string, NotionProperty>;
-      const pathProp = (properties['path'] || properties['Path']) as RichTextProperty | undefined;
-      
-      if (pathProp?.type === 'rich_text' && pathProp.rich_text[0]?.plain_text) {
-        const path = pathProp.rich_text[0].plain_text;
-        this.pagePathCache.set(formattedId, path);
-        return path;
-      }
-
-      this.pagePathCache.set(formattedId, '');
-      return null;
-    } catch (error) {
-      console.error(`Failed to fetch path for page ${pageId}:`, error);
-      return null;
-    }
   }
 
   private async convertPageToMarkdown(pageId: string): Promise<string> {

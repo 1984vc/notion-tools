@@ -34,7 +34,7 @@ describe('NotionMarkdownExporter', () => {
   } as PageObjectResponse);
 
   beforeEach(() => {
-    exporter = new NotionMarkdownExporter('fake-token');
+    exporter = new NotionMarkdownExporter({notionToken: 'fake-token'});
   });
 
   describe('getPageTitle', () => {

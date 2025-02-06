@@ -24,13 +24,20 @@ export declare class NotionMarkdownExporter {
     private n2m;
     private pagePathCache;
     private metaGenerator;
-    private baseUrl;
-    constructor(notionToken: string, baseUrl?: string, transformers?: (n2m: NotionToMarkdown) => void);
+    private baseUrl?;
+    private assetsPath?;
+    private assetsBasePath?;
+    constructor(options: {
+        notionToken: string;
+        baseUrl?: string;
+        assetsPath?: string;
+        assetsBasePath?: string;
+        transformers?: (n2m: NotionToMarkdown) => void;
+    });
     setCustomTransformer(type: string, transformer: CustomTransformer): void;
     private normalizeQuotes;
     private getPageTitle;
     private getOutputPath;
-    private getPagePath;
     private convertPageToMarkdown;
     private processPage;
     private exportDatabaseJson;
