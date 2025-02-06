@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { PageObjectResponse} from '@notionhq/client/build/src/api-endpoints.js';
 import { MetaGenerator } from './meta.js';
-import { urlTransform } from './transformers.js';
+import { imageTransform, urlTransform } from './transformers.js';
 
 interface ExportOptions {
   database: string;
@@ -166,18 +166,25 @@ export class NotionMarkdownExporter {
   private n2m: NotionToMarkdown;
   private pagePathCache: Map<string, string>;
   private metaGenerator: MetaGenerator;
-  private baseUrl: string;
+  private baseUrl?: string;
+  private assetsPath?: string;
 
-  constructor(notionToken: string, baseUrl?: string, transformers?: (n2m: NotionToMarkdown) => void) {
+  constructor(notionToken: string, baseUrl?: string, assetsPath?: string, transformers?: (n2m: NotionToMarkdown) => void) {
     this.notion = new Client({ auth: notionToken });
     this.n2m = new NotionToMarkdown({ notionClient: this.notion });
     this.pagePathCache = new Map();
     this.metaGenerator = new MetaGenerator();
-    this.baseUrl = baseUrl || '';
+    this.baseUrl = baseUrl;
+    this.assetsPath = assetsPath;
     
     // Apply URL transformer if baseUrl is provided
     if (this.baseUrl) {
       urlTransform(this.n2m, this.baseUrl);
+    }
+
+    // Apply URL transformer if baseUrl is provided
+    if (this.assetsPath) {
+      imageTransform(this.n2m, this.assetsPath);
     }
 
     if (transformers) {

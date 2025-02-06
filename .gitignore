@@ -8,7 +8,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-
 # IDEs and editors
 .idea/
 .vscode/
@@ -49,6 +48,7 @@ yarn-error.log*
 
 # MD test output
 output
+tmp
 
 .cache/
 

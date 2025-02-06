@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 export function urlTransform(n2m, baseUrl) {
     if (!baseUrl)
         return;
@@ -7,6 +9,7 @@ export function urlTransform(n2m, baseUrl) {
         if (!block.paragraph?.rich_text)
             return block;
         // Transform URLs in rich_text array
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         block.paragraph.rich_text = block.paragraph.rich_text.map((text) => {
             if (!text.href || !text.href.startsWith(baseUrl))
                 return text;
@@ -59,6 +62,7 @@ export function hextraTransform(n2m) {
         return `{{< callout type="${calloutType}" emoji="${icon}" >}}\n${content}\n{{< /callout >}}`;
     });
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const pageTransformer = (pageResponse) => {
     const page = pageResponse.page;
     if ('properties' in page) {
@@ -71,6 +75,7 @@ export const pageTransformer = (pageResponse) => {
         };
     }
 };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const databaseTransformer = (response) => {
     return response.results.map((page) => {
         if ('properties' in page) {
@@ -82,6 +87,7 @@ export const databaseTransformer = (response) => {
         return page;
     });
 };
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const flattenProperties = (properties) => {
     const simplifiedProperties = {};
     for (const [key, value] of Object.entries(properties)) {
@@ -123,4 +129,28 @@ export const flattenProperties = (properties) => {
     }
     return simplifiedProperties;
 };
+export function imageTransform(n2m, assetsDir = 'assets') {
+    // Ensure the assets directory exists
+    if (!fs.existsSync(assetsDir)) {
+        fs.mkdirSync(assetsDir, { recursive: true });
+    }
+    n2m.setCustomTransformer('image', async (block) => {
+        if (!block.image)
+            return block;
+        if (block.image.external?.url && !block.image.file)
+            return block;
+        const url = block.image.external?.url || block.image.file?.url;
+        if (!url)
+            return block;
+        const fileName = path.basename(new URL(url).pathname);
+        const localFilePath = path.join(assetsDir, fileName);
+        console.log(`Downloading ${url} to ${localFilePath}`);
+        if (!fs.existsSync(localFilePath)) {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            fs.writeFileSync(localFilePath, Buffer.from(arrayBuffer));
+        }
+        return `![${fileName}](${localFilePath})`;
+    });
+}
 //# sourceMappingURL=transformers.js.map

@@ -121,6 +121,7 @@ exportCommand
         const exporter = new NotionMarkdownExporter(
           NOTION_TOKEN,
           options.baseUrl,
+          options.output + '/assets',
           hextraTransform
         );
         
@@ -157,6 +158,7 @@ exportCommand
           }
         }
       } catch (error) {
+        console.log(error)
         console.error('❌ Export failed:', error instanceof Error ? error.message : String(error));
         process.exit(1);
       }

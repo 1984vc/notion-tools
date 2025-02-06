@@ -24,8 +24,9 @@ export declare class NotionMarkdownExporter {
     private n2m;
     private pagePathCache;
     private metaGenerator;
-    private baseUrl;
-    constructor(notionToken: string, baseUrl?: string, transformers?: (n2m: NotionToMarkdown) => void);
+    private baseUrl?;
+    private assetsPath?;
+    constructor(notionToken: string, baseUrl?: string, assetsPath?: string, transformers?: (n2m: NotionToMarkdown) => void);
     setCustomTransformer(type: string, transformer: CustomTransformer): void;
     private normalizeQuotes;
     private getPageTitle;

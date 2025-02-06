@@ -3,17 +3,22 @@ import { NotionToMarkdown } from 'notion-to-md';
 import { mkdir, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { MetaGenerator } from './meta.js';
-import { urlTransform } from './transformers.js';
+import { imageTransform, urlTransform } from './transformers.js';
 export class NotionMarkdownExporter {
-    constructor(notionToken, baseUrl, transformers) {
+    constructor(notionToken, baseUrl, assetsPath, transformers) {
         this.notion = new Client({ auth: notionToken });
         this.n2m = new NotionToMarkdown({ notionClient: this.notion });
         this.pagePathCache = new Map();
         this.metaGenerator = new MetaGenerator();
-        this.baseUrl = baseUrl || '';
+        this.baseUrl = baseUrl;
+        this.assetsPath = assetsPath;
         // Apply URL transformer if baseUrl is provided
         if (this.baseUrl) {
             urlTransform(this.n2m, this.baseUrl);
+        }
+        // Apply URL transformer if baseUrl is provided
+        if (this.assetsPath) {
+            imageTransform(this.n2m, this.assetsPath);
         }
         if (transformers) {
             transformers(this.n2m);

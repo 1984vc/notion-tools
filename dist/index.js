@@ -91,7 +91,7 @@ async function main() {
         .action(async (options) => {
         requireNotionToken();
         try {
-            const exporter = new NotionMarkdownExporter(NOTION_TOKEN, options.baseUrl, hextraTransform);
+            const exporter = new NotionMarkdownExporter(NOTION_TOKEN, options.baseUrl, options.output + '/assets', hextraTransform);
             // Create async iterator for progress updates
             const progressIterator = exporter.exportDatabase({
                 database: options.id,
@@ -126,6 +126,7 @@ async function main() {
             }
         }
         catch (error) {
+            console.log(error);
             console.error('❌ Export failed:', error instanceof Error ? error.message : String(error));
             process.exit(1);
         }

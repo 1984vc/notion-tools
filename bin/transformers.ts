@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { QueryDatabaseResponse } from '@notionhq/client/build/src/api-endpoints.js';
 import { NotionToMarkdown } from 'notion-to-md';
 import { PageWithBlocks } from './json.js';
@@ -142,4 +144,26 @@ export const flattenProperties = (properties: Record<string, unknown>): Record<s
   }
 
   return simplifiedProperties;
+}
+
+export function imageTransform(n2m: NotionToMarkdown, assetsDir: string = 'assets'): void {
+  // Ensure the assets directory exists
+  if (!fs.existsSync(assetsDir)) {
+    fs.mkdirSync(assetsDir, { recursive: true });
+  }
+  n2m.setCustomTransformer('image', async (block: any) => {
+    if (!block.image) return block;
+    if (block.image.external?.url && !block.image.file) return block;
+    const url = block.image.external?.url || block.image.file?.url;
+    if (!url) return block;
+    const fileName = path.basename(new URL(url).pathname);
+    const localFilePath = path.join(assetsDir, fileName);
+    console.log(`Downloading ${url} to ${localFilePath}`);
+    if (!fs.existsSync(localFilePath)) {
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      fs.writeFileSync(localFilePath, Buffer.from(arrayBuffer));
+    }
+    return `![${fileName}](${localFilePath})`;
+  });
 }
